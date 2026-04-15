@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triage Training — Game</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:16px}
+.wrap{max-width:1100px;margin:0 auto}
+
+/* Header */
+.top-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:0.5px solid #e0ddd5}
+.top-bar h1{font-size:16px;font-weight:500;color:#1a1a1a}
+.badge{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;border:0.5px solid #d0cdc5;color:#666;background:#fff}
+.progress{display:flex;gap:6px;margin-left:auto;align-items:center}
+.step-dot{width:8px;height:8px;border-radius:50%;background:#d0cdc5}
+.step-dot.done{background:#63c584}
+.step-dot.active{background:#378ADD}
+
+/* Phase banner */
+.phase-banner{background:#fff;border:0.5px solid #e0ddd5;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.phase-num{width:28px;height:28px;border-radius:50%;background:#378ADD;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
+.phase-title{font-size:14px;font-weight:500;color:#1a1a1a}
+.phase-hint{font-size:12px;color:#888;margin-top:1px}
+
+/* Patient cards */
+.patients-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.patient-card{background:#fff;border:1.5px solid #e0ddd5;border-radius:12px;padding:14px;cursor:pointer;position:relative;transition:border-color 0.15s,transform 0.1s;user-select:none}
+.patient-card:hover{border-color:#aaa}
+.patient-card.selected{border-color:#378ADD;background:#f0f7ff}
+.patient-card.assigned{opacity:0.5;cursor:default}
+.slot-badge{position:absolute;top:-10px;left:-10px;width:24px;height:24px;border-radius:50%;background:#378ADD;color:#fff;font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center}
+.correct-badge{position:absolute;top:-10px;right:-10px;width:24px;height:24px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center}
+.card-header{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.cond-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.card-pid{font-size:13px;font-weight:500;color:#1a1a1a}
+.card-name{font-size:12px;color:#444;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.risk-tag{display:none}
+.vitals{font-size:11px;color:#555;font-family:monospace}
+.vital-row{display:flex;justify-content:space-between;padding:2px 0}
+.vital-warn{color:#555;font-weight:400}
+.card-footer{display:flex;justify-content:space-between;font-size:10px;color:#888;margin-top:5px;padding-top:5px;border-top:0.5px solid #f0ede5}
+
+/* Slots */
+.slots-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.slot{background:#fff;border:1.5px dashed #d0cdc5;border-radius:12px;padding:10px;min-height:80px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color 0.15s}
+.slot:hover{border-color:#378ADD}
+.slot.occupied{border-style:solid;border-color:#e0ddd5;cursor:pointer}
+.slot.occupied:hover{border-color:#E24B4A}
+.slot-label{font-size:11px;color:#bbb}
+.slot-num{font-size:10px;font-weight:500;color:#888;text-align:center;margin-bottom:4px}
+
+/* Processes */
+.proc-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:0.5px solid #e0ddd5;margin-bottom:16px}
+.proc-table th{background:#f5f4f0;padding:10px 14px;font-size:12px;font-weight:500;color:#666;text-align:left;border-bottom:0.5px solid #e0ddd5}
+.proc-table td{padding:10px 14px;border-bottom:0.5px solid #f0ede5;font-size:13px;vertical-align:top}
+.proc-table tr:last-child td{border-bottom:none}
+.proc-check{display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:5px 10px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;transition:all 0.12s;font-size:12px;color:#555;white-space:nowrap;margin:3px;user-select:none}
+.proc-check.active{background:#E6F1FB;border-color:#378ADD;color:#185FA5}
+.proc-check:hover{border-color:#888}
+.proc-checks{display:flex;flex-wrap:wrap;margin-top:6px}
+.patient-mini{font-size:11px;color:#888;font-family:monospace;margin-top:4px;line-height:1.6}
+.vital-inline-warn{color:#888;font-weight:400}
+
+/* Destinations */
+.dest-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:0.5px solid #e0ddd5;margin-bottom:16px}
+.dest-table th{background:#f5f4f0;padding:10px 14px;font-size:12px;font-weight:500;color:#666;text-align:left;border-bottom:0.5px solid #e0ddd5}
+.dest-table td{padding:10px 14px;border-bottom:0.5px solid #f0ede5;font-size:13px;vertical-align:top}
+.dest-table tr:last-child td{border-bottom:none}
+select{padding:7px 12px;border-radius:6px;border:0.5px solid #d0cdc5;font-size:13px;background:#fff;outline:none;cursor:pointer;min-width:180px}
+select:focus{border-color:#378ADD}
+
+/* Feedback */
+.feedback-box{background:#fff;border:0.5px solid #e0ddd5;border-radius:12px;padding:16px;margin-bottom:16px}
+.feedback-box h3{font-size:14px;font-weight:500;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.score-line{font-size:22px;font-weight:500}
+.score-ok{color:#3B6D11}
+.score-warn{color:#854F0B}
+.score-bad{color:#A32D2D}
+.error-item{padding:8px 10px;border-radius:6px;background:#FCEBEB;border-left:3px solid #E24B4A;margin-bottom:6px;font-size:12px}
+.error-expl{font-size:11px;color:#555;margin-top:4px;font-style:italic}
+.ok-item{padding:8px 10px;border-radius:6px;background:#EAF3DE;border-left:3px solid #63c584;margin-bottom:6px;font-size:12px;color:#3B6D11}
+
+/* Buttons */
+.btn{padding:8px 20px;border-radius:8px;border:0.5px solid #d0cdc5;background:#fff;font-size:13px;cursor:pointer;transition:all 0.12s;color:#333}
+.btn:hover{border-color:#888;background:#f5f4f0}
+.btn-primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn-primary:hover{background:#333}
+.btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;cursor:pointer;color:#555}
+.btn-sm:hover{background:#f0ede5}
+
+/* Colors */
+.Cardiac{color:#E24B4A}.Pulmonary{color:#378ADD}.Neurological{color:#7F77DD}
+.Trauma{color:#BA7517}.Infectious{color:#1D9E75}
+.risk-Critical{background:#FCEBEB;color:#A32D2D}
+.risk-Moderate{background:#FAEEDA;color:#854F0B}
+.risk-Stable{background:#EAF3DE;color:#3B6D11}
+
+.btn-rules{padding:5px 14px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:12px;cursor:pointer;color:#333;margin-left:8px;transition:all 0.12s}
+.btn-rules:hover{background:#f5f4f0;border-color:#888}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-bar">
+    <h1>Triage Training</h1>
+    <span class="badge" id="set-badge">Set A</span>
+    <span class="badge" id="group-badge">Group 1</span>
+    <span class="badge" id="lang-badge">EN</span>
+    <div class="progress" id="phase-progress"></div>
+    <button class="btn-rules" onclick="openRules()">Rules</button>
+  </div>
+
+  <div id="main-content"><div class="loading">Loading patients...</div></div>
+</div>
+
+<!-- Rules modal -->
+<div id="rules-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);z-index:100;overflow-y:auto;padding:24px">
+  <div style="background:#fff;border-radius:16px;max-width:700px;margin:0 auto;padding:32px;position:relative">
+    <button onclick="closeRules()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#888;line-height:1">×</button>
+    <h2 style="font-size:18px;font-weight:500;margin-bottom:20px">Triage Rules</h2>
+
+    <h3 style="font-size:13px;font-weight:500;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.3px">Vital thresholds</h3>
+    <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:20px">
+      <thead><tr style="background:#f5f4f0">
+        <th style="padding:6px 10px;text-align:left;border:0.5px solid #e0ddd5">Vital</th>
+        <th style="padding:6px 10px;text-align:center;border:0.5px solid #e0ddd5;color:#3B6D11">Normal</th>
+        <th style="padding:6px 10px;text-align:center;border:0.5px solid #e0ddd5;color:#854F0B">Abnormal</th>
+        <th style="padding:6px 10px;text-align:center;border:0.5px solid #e0ddd5;color:#A32D2D">Critical</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:5px 10px;border:0.5px solid #e0ddd5">HR (bpm)</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">60–100</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">101–130</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">&gt;130 or &lt;40</td></tr>
+        <tr style="background:#f9f8f6"><td style="padding:5px 10px;border:0.5px solid #e0ddd5">BP (mmHg)</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">90–140</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">&gt;140 or &lt;90</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">—</td></tr>
+        <tr><td style="padding:5px 10px;border:0.5px solid #e0ddd5">SpO2 (%)</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">≥94</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">90–93</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">&lt;90</td></tr>
+        <tr style="background:#f9f8f6"><td style="padding:5px 10px;border:0.5px solid #e0ddd5">RR (/min)</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">12–20</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">21–30</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">&gt;30 or &lt;10</td></tr>
+        <tr><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Temp (°C)</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">36–37.5</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">37.6–39</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">&gt;39 or &lt;35</td></tr>
+        <tr style="background:#f9f8f6"><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Alertness</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">Alert</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">Confused</td><td style="padding:5px 10px;text-align:center;border:0.5px solid #e0ddd5">Lethargic</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size:13px;font-weight:500;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.3px">Selection order</h3>
+    <p style="font-size:12px;color:#444;margin-bottom:16px;line-height:1.6">
+      1. <strong>Risk level</strong> — Critical first, then Moderate, then Stable.<br>
+      2. <strong>Onset</strong> (tiebreak within same risk) — Sudden → Progressive → Recurring.<br>
+      3. <strong>Alertness</strong> (tiebreak) — Lethargic → Confused → Alert.
+    </p>
+
+    <h3 style="font-size:13px;font-weight:500;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.3px">Risk derivation</h3>
+    <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:20px">
+      <thead><tr style="background:#f5f4f0">
+        <th style="padding:6px 10px;text-align:left;border:0.5px solid #e0ddd5">Condition</th>
+        <th style="padding:6px 10px;text-align:left;border:0.5px solid #e0ddd5;color:#A32D2D">Critical</th>
+        <th style="padding:6px 10px;text-align:left;border:0.5px solid #e0ddd5;color:#854F0B">Moderate</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>Cardiac</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">HR Critical OR (HR High AND BP Low)</td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">HR High OR BP High/Low</td></tr>
+        <tr style="background:#f9f8f6"><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>Pulmonary</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">SpO2 Critical OR (SpO2 Low AND RR Critical)</td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">SpO2 Low OR RR High</td></tr>
+        <tr><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>Neurological</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Lethargic</td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Confused OR BP High</td></tr>
+        <tr style="background:#f9f8f6"><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>Trauma</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">HR High AND Non-Ambulatory</td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">HR High OR Non-Ambulatory (not both)</td></tr>
+        <tr><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>Infectious</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Temp Critical AND HR High</td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Temp High OR (Temp Critical AND HR Normal)</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size:13px;font-weight:500;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.3px">Additional processes</h3>
+    <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:20px">
+      <thead><tr style="background:#f5f4f0">
+        <th style="padding:6px 10px;text-align:left;border:0.5px solid #e0ddd5">Process</th>
+        <th style="padding:6px 10px;text-align:left;border:0.5px solid #e0ddd5">When to apply</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>Call Rapid Response</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Cardiac OR Pulmonary AND Critical. Not Infectious.</td></tr>
+        <tr style="background:#f9f8f6"><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>Request Stretcher</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Non-Ambulatory AND (Critical OR Trauma Moderate).</td></tr>
+        <tr><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>Companion to Waiting Bay</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Accompanied AND Stable. Not Neurological or Infectious.</td></tr>
+        <tr style="background:#f9f8f6"><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>Interpreter / Support</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Cardiac/Pulmonary/Infectious AND Agitated AND Unaccompanied AND (Stable or Moderate).</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size:13px;font-weight:500;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.3px">Destinations</h3>
+    <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:8px">
+      <thead><tr style="background:#f5f4f0">
+        <th style="padding:6px 10px;text-align:left;border:0.5px solid #e0ddd5">Destination</th>
+        <th style="padding:6px 10px;text-align:left;border:0.5px solid #e0ddd5">Rule</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>Surgical Bay</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Trauma Critical or Moderate.</td></tr>
+        <tr style="background:#f9f8f6"><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>Acute Medical</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Cardiac/Pulmonary/Neurological Critical. OR Cardiac Moderate + Sudden onset.</td></tr>
+        <tr><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>Monitored Ward</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Cardiac Moderate (Progressive/Recurring). Cardiac Stable + Sudden. Pulmonary Moderate. Neurological Moderate. Neurological Stable + Sudden. Infectious Critical.</td></tr>
+        <tr style="background:#f9f8f6"><td style="padding:5px 10px;border:0.5px solid #e0ddd5"><strong>General Ward</strong></td><td style="padding:5px 10px;border:0.5px solid #e0ddd5">Everything else.</td></tr>
+      </tbody>
+    </table>
+    <button onclick="closeRules()" style="margin-top:16px;padding:8px 20px;border-radius:8px;border:0.5px solid #d0cdc5;background:#f5f4f0;cursor:pointer;font-size:13px">Close</button>
+  </div>
+</div>
+
+<script>
+const COND_COLORS={Cardiac:'#E24B4A',Pulmonary:'#378ADD',Neurological:'#7F77DD',Trauma:'#BA7517',Infectious:'#1D9E75'};
+const PROCESSES=["Rapid Response","Stretcher","Companion Bay","Interpreter"];
+const DESTINATIONS=["Surgical Bay","Acute Medical","Monitored Ward","General Ward"];
+
+let STATE={
+  phase:'selection',
+  patients:[],
+  correctOrder:[],
+  group:1,groupIndex:0,totalGroups:3,
+  set:'A',language:'en',
+  selection:{},
+  selectedCard:null,
+  processes:{},
+  destinations:{},
+  lastFeedback:null,
+  selectionDone:false,
+  processesDone:false,
+  // ── Timing ──
+  sessionStart:null,
+  phaseStart:null,
+  phaseTimes:{},       // {phase: total_ms}
+  // ── Rule consultations ──
+  ruleConsultations:[], // [{phase, opened_at, duration_ms}]
+  ruleOpenedAt:null,
+};
+
+function now(){return Date.now();}
+function elapsed(start){return start?Math.round((now()-start)/1000):0;}
+
+function startPhaseTimer(phase){
+  if(STATE.phaseStart){
+    const prev=STATE.phase;
+    STATE.phaseTimes[prev]=(STATE.phaseTimes[prev]||0)+(now()-STATE.phaseStart);
+  }
+  STATE.phaseStart=now();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function loadGroup(){
+  const res=await fetch('/api/group_patients');
+  const data=await res.json();
+  if(data.done){window.location.href='/results';return;}
+  STATE.patients=data.patients;
+  STATE.correctOrder=data.correct_order;
+  STATE.group=data.group;
+  STATE.groupIndex=data.group_index;
+  STATE.totalGroups=data.total_groups;
+  STATE.set=data.set;
+  STATE.language=data.language;
+  STATE.selection={};STATE.selectedCard=null;
+  STATE.processes=Object.fromEntries(data.patients.map(p=>[p.pid,[]]));
+  STATE.destinations=Object.fromEntries(data.patients.map(p=>[p.pid,'']));
+  STATE.phase='selection';
+  STATE.selectionDone=false;STATE.processesDone=false;
+  STATE.phaseTimes={};STATE.phaseStart=now();
+  STATE.ruleConsultations=[];
+  if(!STATE.sessionStart) STATE.sessionStart=now();
+
+  document.getElementById('set-badge').textContent='Set '+STATE.set;
+  document.getElementById('group-badge').textContent='Group '+STATE.group;
+  document.getElementById('lang-badge').textContent=STATE.language.toUpperCase();
+  renderPhaseProgress();
+  renderSelection();
+}
+
+// ── RULES MODAL ───────────────────────────────────────────────────────────────
+function openRules(){
+  STATE.ruleOpenedAt=now();
+  document.getElementById('rules-overlay').style.display='block';
+}
+function closeRules(){
+  if(STATE.ruleOpenedAt){
+    const duration=now()-STATE.ruleOpenedAt;
+    STATE.ruleConsultations.push({
+      phase:STATE.phase,
+      opened_at:new Date(STATE.ruleOpenedAt).toISOString(),
+      duration_ms:duration
+    });
+    STATE.ruleOpenedAt=null;
+  }
+  document.getElementById('rules-overlay').style.display='none';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeRules();});
+
+function getRuleMetrics(){
+  const byPhase={};
+  STATE.ruleConsultations.forEach(c=>{
+    if(!byPhase[c.phase])byPhase[c.phase]={count:0,total_ms:0};
+    byPhase[c.phase].count++;
+    byPhase[c.phase].total_ms+=c.duration_ms;
+  });
+  return{
+    total_consultations:STATE.ruleConsultations.length,
+    total_time_ms:STATE.ruleConsultations.reduce((s,c)=>s+c.duration_ms,0),
+    by_phase:byPhase,
+    consultations:STATE.ruleConsultations,
+  };
+}
+
+function getPhaseTime(phase){
+  const stored=STATE.phaseTimes[phase]||0;
+  const current=(STATE.phase===phase&&STATE.phaseStart)?(now()-STATE.phaseStart):0;
+  return Math.round((stored+current)/1000);
+}
+// ── RENDER PHASE PROGRESS ────────────────────────────────────────────────────
+function renderPhaseProgress(){
+  const phases=['Selection','Processes','Destinations'];
+  const phaseMap={selection:0,processes:1,destinations:2,'proc-feedback':0,'dest-feedback':1,'final-feedback':2};
+  const cur=phaseMap[STATE.phase]??0;
+  document.getElementById('phase-progress').innerHTML=
+    `<span style="font-size:11px;color:#888">Group ${STATE.groupIndex+1}/${STATE.totalGroups}</span>`+
+    phases.map((p,i)=>`<div class="step-dot ${i<cur?'done':i===cur?'active':''}" title="${p}"></div>`).join('');
+}
+
+// ── VITAL FORMATTING ─────────────────────────────────────────────────────────
+function isWarnVital(key,val){
+  if(key==='hr'&&(val>130||val<40||val>=101))return true;
+  if(key==='bp'&&(val>140||val<90))return true;
+  if(key==='spo2'&&val<94)return true;
+  if(key==='rr'&&(val>20||val<12))return true;
+  if(key==='temp'&&(val>37.5||val<35))return true;
+  return false;
+}
+const VITAL_UNITS={hr:' bpm',bp:' mmHg',spo2:'%',rr:'/min',temp:'°C'};
+const VITAL_LABELS={hr:'HR',bp:'BP',spo2:'SpO2',rr:'RR',temp:'Temp'};
+
+function vitalRow(key,val){
+  const w=isWarnVital(key,val);
+  return`<div class="vital-row"><span>${VITAL_LABELS[key]}</span><span class="${w?'vital-warn':''}">${val}${VITAL_UNITS[key]}</span></div>`;
+}
+
+const COND_BG={
+  Cardiac:'#FEECEC',Pulmonary:'#E8F2FD',Neurological:'#EEEDFB',
+  Trauma:'#FDF3E3',Infectious:'#E3F5EE'
+};
+
+function renderPatientCard(p,opts={}){
+  const {slot,selected,assigned,showCorrect,correct}=opts;
+  const cls=['patient-card',selected?'selected':'',assigned?'assigned':''].filter(Boolean).join(' ');
+  const slotBadge=slot?`<div class="slot-badge">${slot}</div>`:'';
+  const correctBadge=showCorrect!=null?(correct?'<div class="correct-badge">✓</div>':'<div class="correct-badge" style="background:#FCEBEB;color:#A32D2D">✗</div>'):'';
+  const mobShort=p.mobility==='Non-Ambulatory'?'Non-Amb':'Amb';
+  return`
+    <div class="${cls}" data-pid="${p.pid}" onclick="handleCardClick('${p.pid}')">
+      ${slotBadge}${correctBadge}
+      <div class="card-header">
+        <span class="card-pid">${p.pid}</span>
+      </div>
+      <div class="card-name">${p.name}</div>
+      <div style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;margin-bottom:6px;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${p.condition}</div>
+      <div class="vitals">
+        ${vitalRow('hr',p.hr)}${vitalRow('bp',p.bp)}${vitalRow('spo2',p.spo2)}
+        ${vitalRow('rr',p.rr)}${vitalRow('temp',p.temp)}
+      </div>
+      <div class="card-footer">
+        <span>${p.alertness}</span><span>${p.onset}</span><span>${mobShort}</span>
+      </div>
+    </div>`;
+}
+
+// ── SELECTION PHASE ───────────────────────────────────────────────────────────
+function renderSelection(){
+  STATE.phase='selection';
+  renderPhaseProgress();
+  const assignedPids=new Set(Object.values(STATE.selection));
+  const unassigned=STATE.patients
+    .filter(p=>!assignedPids.has(p.pid))
+    .sort((a,b)=>parseInt(a.pid.slice(1))-parseInt(b.pid.slice(1)));
+
+  let html=`
+    <div class="phase-banner">
+      <div class="phase-num">1</div>
+      <div><div class="phase-title">Selection order</div>
+      <div class="phase-hint">Click a patient card, then click a slot number to assign it. Click an occupied slot to clear.</div></div>
+    </div>
+    <div class="slots-grid">`;
+
+  for(let s=1;s<=5;s++){
+    const pid=STATE.selection[s];
+    const p=pid?STATE.patients.find(x=>x.pid===pid):null;
+    html+=`<div class="slot ${pid?'occupied':''}" onclick="handleSlotClick(${s})">
+      <div class="slot-num">Slot ${s}</div>`;
+    if(p){
+      const mini=`<div style="font-size:10px;font-weight:500;color:#1a1a1a;text-align:center">${p.pid}<br>${p.name.split(',')[0]}</div>
+        <span class="risk-tag risk-${p.risk}" style="margin-top:4px">${p.risk}</span>`;
+      html+=mini;
+    } else {
+      html+=`<span class="slot-label">${STATE.selectedCard?'click to place':'empty'}</span>`;
+    }
+    html+=`</div>`;
+  }
+  html+=`</div>
+    <div style="font-size:11px;color:#888;margin-bottom:10px">Unassigned patients — click to select</div>
+    <div class="patients-grid">`;
+
+  unassigned.forEach(p=>{
+    html+=renderPatientCard(p,{selected:STATE.selectedCard===p.pid});
+  });
+  if(unassigned.length===0) html+='<p style="font-size:12px;color:#888">All patients assigned</p>';
+  html+=`</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitSelection()">Validate selection →</button>
+    </div>`;
+
+  document.getElementById('main-content').innerHTML=html;
+}
+
+function handleCardClick(pid){
+  if(Object.values(STATE.selection).includes(pid))return;
+  STATE.selectedCard=STATE.selectedCard===pid?null:pid;
+  renderSelection();
+}
+
+function handleSlotClick(slot){
+  if(STATE.selection[slot]){
+    delete STATE.selection[slot];
+    STATE.selectedCard=null;
+    renderSelection();return;
+  }
+  if(STATE.selectedCard){
+    Object.keys(STATE.selection).forEach(s=>{if(STATE.selection[s]===STATE.selectedCard)delete STATE.selection[s];});
+    STATE.selection[slot]=STATE.selectedCard;
+    STATE.selectedCard=null;
+    renderSelection();
+  }
+}
+
+async function submitSelection(){
+  if(Object.keys(STATE.selection).length<5){
+    alert('Please assign all 5 patients to slots first.');return;
+  }
+  const placed={};
+  Object.entries(STATE.selection).forEach(([s,pid])=>placed[s]=pid);
+  const phaseTimeSec=getPhaseTime('selection');
+  startPhaseTimer('proc-feedback');
+  const res=await fetch('/api/validate',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      phase:'selection',answers:placed,group:STATE.group,
+      phase_time_sec:phaseTimeSec,
+      rule_metrics:getRuleMetrics(),
+    })});
+  const data=await res.json();
+  STATE.lastFeedback=data;
+  STATE.selectionDone=data.perfect;
+  renderSelectionFeedback(data,placed);
+}
+
+function renderSelectionFeedback(data,placed){
+  STATE.phase='proc-feedback';
+  renderPhaseProgress();
+  const scoreClass=data.score===5?'score-ok':data.score>=3?'score-warn':'score-bad';
+  let errHtml='';
+  if(data.errors.length){
+    errHtml='<div style="margin-top:12px">';
+    data.errors.forEach(e=>{
+      errHtml+=`<div class="error-item">
+        <strong>Slot ${e.slot}:</strong> placed <em>${e.placed||'empty'}</em> — expected <em>${e.expected} ${e.expected_name}</em>
+        <div class="error-expl">${e.explanation}</div>
+      </div>`;
+    });
+    errHtml+='</div>';
+  } else {
+    errHtml=`<p style="font-size:12px;color:#3B6D11;margin-top:8px">All positions correct.</p>`;
+  }
+
+  const btnHtml=data.perfect
+    ?`<button class="btn btn-primary" onclick="renderProcesses()">Next: Processes →</button>`
+    :`<button class="btn" onclick="renderSelection()">← Rearrange</button>
+      <button class="btn btn-primary" onclick="renderProcesses()">Continue to processes →</button>`;
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="phase-banner">
+      <div class="phase-num">1</div>
+      <div><div class="phase-title">Selection — attempt ${data.attempt}</div></div>
+    </div>
+    <div class="feedback-box">
+      <h3>Score: <span class="${scoreClass} score-line">${data.score}/5</span></h3>
+      ${errHtml}
+    </div>
+    <div class="patients-grid">
+      ${STATE.patients.map(p=>{
+        const slot=Object.entries(STATE.selection).find(([s,pid])=>pid===p.pid)?.[0];
+        const correctSlot=STATE.correctOrder.indexOf(p.pid)+1;
+        const ok=slot&&parseInt(slot)===correctSlot;
+        return renderPatientCard(p,{slot:slot||'?',showCorrect:slot?true:null,correct:ok});
+      }).join('')}
+    </div>
+    <div class="btn-row">${btnHtml}</div>`;
+}
+
+// ── PROCESSES PHASE ───────────────────────────────────────────────────────────
+function vitalMini(p){
+  const keys=[['hr','HR',p.hr,' bpm'],['bp','BP',p.bp,' mmHg'],['spo2','SpO2',p.spo2,'%'],['rr','RR',p.rr,'/min'],['temp','Temp',p.temp,'°C']];
+  return keys.map(([k,l,v,u])=>{
+    const w=isWarnVital(k,v);
+    return`<span style="margin-right:8px"><span style="color:#aaa">${l} </span><span class="${w?'vital-inline-warn':''}">${v}${u}</span></span>`;
+  }).join('');
+}
+
+function renderProcesses(){
+  STATE.phase='processes';
+  renderPhaseProgress();
+  const orderedPids=STATE.correctOrder;
+
+  let rows='';
+  orderedPids.forEach(pid=>{
+    const p=STATE.patients.find(x=>x.pid===pid);
+    const curProcs=STATE.processes[pid]||[];
+    rows+=`<tr>
+      <td style="min-width:220px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${COND_COLORS[p.condition]};flex-shrink:0"></div>
+          <strong>${pid}</strong> ${p.name}
+        </div>
+        <span class="risk-tag risk-${p.risk}">${p.condition} · ${p.risk}</span>
+        <div class="patient-mini">${vitalMini(p)}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px">${p.alertness} · ${p.onset} · ${p.mobility==='Non-Ambulatory'?'Non-Amb':'Ambulatory'} · ${p.companion} · ${p.cooperation}</div>
+      </td>
+      <td>
+        <div class="proc-checks" id="procs-${pid}">
+          ${PROCESSES.map(proc=>{
+            const active=curProcs.includes(proc);
+            return`<span class="proc-check ${active?'active':''}" data-pid="${pid}" data-proc="${proc}">${proc}</span>`;
+          }).join('')}
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="phase-banner">
+      <div class="phase-num">2</div>
+      <div><div class="phase-title">Additional processes</div>
+      <div class="phase-hint">Click to toggle which additional processes apply to each patient.</div></div>
+    </div>
+    <table class="proc-table">
+      <thead><tr><th>Patient</th><th>Processes (click to toggle)</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitProcesses()">Validate processes →</button>
+    </div>`;
+
+  // Attach click handlers after DOM is ready
+  document.querySelectorAll('.proc-check').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const pid=el.dataset.pid;
+      const proc=el.dataset.proc;
+      const cur=STATE.processes[pid]||[];
+      STATE.processes[pid]=cur.includes(proc)?cur.filter(x=>x!==proc):[...cur,proc];
+      el.classList.toggle('active',STATE.processes[pid].includes(proc));
+    });
+  });
+}
+
+async function submitProcesses(){
+  const phaseTimeSec=getPhaseTime('processes');
+  startPhaseTimer('dest-feedback');
+  const res=await fetch('/api/validate',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      phase:'processes',answers:STATE.processes,group:STATE.group,
+      phase_time_sec:phaseTimeSec,
+      rule_metrics:getRuleMetrics(),
+    })});
+  const data=await res.json();
+  STATE.lastFeedback=data;
+  STATE.processesDone=data.perfect;
+  renderProcessFeedback(data);
+}
+
+function renderProcessFeedback(data){
+  STATE.phase='dest-feedback';
+  renderPhaseProgress();
+  const scoreClass=data.score===5?'score-ok':data.score>=3?'score-warn':'score-bad';
+  let errHtml='';
+  if(data.errors.length){
+    errHtml='<div style="margin-top:12px">';
+    data.errors.forEach(e=>{
+      const got=e.placed.length?e.placed.join(', '):'none';
+      const exp=e.expected.length?e.expected.join(', '):'none';
+      errHtml+=`<div class="error-item">
+        <strong>${e.pid} ${e.name}:</strong> expected <em>${exp}</em>, got <em>${got}</em>
+        ${e.missing.length?`<br><span style="color:#A32D2D">Missing: ${e.missing.join(', ')}</span>`:''}
+        ${e.extra.length?`<br><span style="color:#854F0B">Remove: ${e.extra.join(', ')}</span>`:''}
+        <div class="error-expl">${e.explanation}</div>
+      </div>`;
+    });
+    errHtml+='</div>';
+  } else {
+    errHtml=`<p style="font-size:12px;color:#3B6D11;margin-top:8px">All processes correct.</p>`;
+  }
+
+  const btnHtml=data.perfect
+    ?`<button class="btn btn-primary" onclick="renderDestinations()">Next: Destinations →</button>`
+    :`<button class="btn" onclick="renderProcesses()">← Redo processes</button>
+      <button class="btn btn-primary" onclick="renderDestinations()">Continue →</button>`;
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="phase-banner">
+      <div class="phase-num">2</div>
+      <div><div class="phase-title">Processes — attempt ${data.attempt}</div></div>
+    </div>
+    <div class="feedback-box">
+      <h3>Score: <span class="${scoreClass} score-line">${data.score}/5</span></h3>
+      ${errHtml}
+    </div>
+    <div class="btn-row">${btnHtml}</div>`;
+}
+
+// ── DESTINATIONS PHASE ────────────────────────────────────────────────────────
+function renderDestinations(){
+  STATE.phase='destinations';
+  renderPhaseProgress();
+  const orderedPids=STATE.correctOrder;
+
+  let rows='';
+  orderedPids.forEach(pid=>{
+    const p=STATE.patients.find(x=>x.pid===pid);
+    const cur=STATE.destinations[pid]||'';
+    const opts=DESTINATIONS.map(d=>`<option value="${d}" ${cur===d?'selected':''}>${d}</option>`).join('');
+    rows+=`<tr>
+      <td style="min-width:220px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${COND_COLORS[p.condition]};flex-shrink:0"></div>
+          <strong>${pid}</strong> ${p.name}
+        </div>
+        <span class="risk-tag risk-${p.risk}">${p.condition} · ${p.risk} · ${p.onset}</span>
+        <div class="patient-mini">${vitalMini(p)}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px">${p.alertness} · ${p.mobility==='Non-Ambulatory'?'Non-Ambulatory':'Ambulatory'}</div>
+      </td>
+      <td>
+        <select onchange="setDest('${pid}',this.value)">
+          <option value="">select destination...</option>${opts}
+        </select>
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="phase-banner">
+      <div class="phase-num">3</div>
+      <div><div class="phase-title">Destinations</div>
+      <div class="phase-hint">Assign each patient to the correct hospital destination.</div></div>
+    </div>
+    <table class="dest-table">
+      <thead><tr><th>Patient</th><th>Destination</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitDestinations()">Validate destinations →</button>
+    </div>`;
+}
+
+function setDest(pid,val){STATE.destinations[pid]=val;}
+
+async function submitDestinations(){
+  const phaseTimeSec=getPhaseTime('destinations');
+  startPhaseTimer('final-feedback');
+  const res=await fetch('/api/validate',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      phase:'destinations',answers:STATE.destinations,group:STATE.group,
+      phase_time_sec:phaseTimeSec,
+      rule_metrics:getRuleMetrics(),
+    })});
+  const data=await res.json();
+  STATE.lastFeedback=data;
+  renderDestFeedback(data);
+}
+
+function renderDestFeedback(data){
+  STATE.phase='final-feedback';
+  renderPhaseProgress();
+  const scoreClass=data.score===5?'score-ok':data.score>=3?'score-warn':'score-bad';
+  let errHtml='';
+  if(data.errors.length){
+    errHtml='<div style="margin-top:12px">';
+    data.errors.forEach(e=>{
+      errHtml+=`<div class="error-item">
+        <strong>${e.pid} ${e.name}:</strong> correct is <em>${e.expected}</em>, placed <em>${e.placed||'none'}</em>
+        <div class="error-expl">${e.explanation}</div>
+      </div>`;
+    });
+    errHtml+='</div>';
+  } else {
+    errHtml=`<p style="font-size:12px;color:#3B6D11;margin-top:8px">All destinations correct.</p>`;
+  }
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="phase-banner">
+      <div class="phase-num">3</div>
+      <div><div class="phase-title">Destinations — attempt ${data.attempt}</div></div>
+    </div>
+    <div class="feedback-box">
+      <h3>Score: <span class="${scoreClass} score-line">${data.score}/5</span></h3>
+      ${errHtml}
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="completeGroup()">Next group →</button>
+    </div>`;
+}
+
+// ── COMPLETE GROUP ────────────────────────────────────────────────────────────
+async function completeGroup(){
+  const res=await fetch('/api/complete_group',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({group:STATE.group})});
+  const data=await res.json();
+  if(data.done){window.location.href='/results';}
+  else{loadGroup();}
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
+loadGroup();
+</script>
+</body>
+</html>

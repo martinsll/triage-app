@@ -1,0 +1,151 @@
+{
+  "session_id": "Marti_20260415_203113",
+  "participant_id": "Marti",
+  "set": "A",
+  "groups": [
+    1,
+    2,
+    3
+  ],
+  "language": "en",
+  "created_at": "2026-04-15T20:31:13.730463",
+  "completed_at": null,
+  "iterations": {
+    "1": {
+      "group": 1,
+      "selection": {
+        "attempts": [
+          {
+            "attempt": 1,
+            "placed": {
+              "1": "P04",
+              "2": "P02",
+              "3": "P03",
+              "4": "P05",
+              "5": "P01"
+            },
+            "score": "0/5",
+            "errors": [
+              {
+                "slot": 1,
+                "placed": "P04",
+                "expected": "P02",
+                "expected_name": "Chiara V., 28F",
+                "explanation": "Chiara is Pulmonary with SpO2 87% \u2014 Critical. She is Lethargic with Sudden onset, which puts her first among all patients. She also needs a Stretcher and Rapid Response."
+              },
+              {
+                "slot": 2,
+                "placed": "P02",
+                "expected": "P01",
+                "expected_name": "Marco T., 54M",
+                "explanation": "Marco is Cardiac with HR 142 \u2014 that is Critical. He has Sudden onset and is Alert, so he goes second among the Critical patients."
+              },
+              {
+                "slot": 3,
+                "placed": "P03",
+                "expected": "P04",
+                "expected_name": "Yuki T., 61F",
+                "explanation": "Yuki is Infectious with Temp 39.4 and HR 112 \u2014 both Critical thresholds, so she is Critical. Progressive onset places her third among Critical patients. Important: no Rapid Response for Infectious \u2014 that only applies to Cardiac and Pulmonary."
+              },
+              {
+                "slot": 4,
+                "placed": "P05",
+                "expected": "P03",
+                "expected_name": "Elena C., 42F",
+                "explanation": "Elena is Cardiac with HR 115 \u2014 that makes her Moderate. With Sudden onset, Cardiac Moderate goes to Acute Medical, not Monitored Ward. She also needs Interpreter support."
+              },
+              {
+                "slot": 5,
+                "placed": "P01",
+                "expected": "P05",
+                "expected_name": "David W., 58M",
+                "explanation": "David is Neurological, Alert with normal BP \u2014 that is Stable. However his onset is Sudden, so a Stable Neurological patient with Sudden onset goes to Monitored Ward, not General Ward."
+              }
+            ],
+            "timestamp": "2026-04-15T20:31:59.652903"
+          }
+        ],
+        "final_score": null,
+        "questions_asked": 0
+      },
+      "processes": {
+        "attempts": [
+          {
+            "attempt": 1,
+            "placed": {
+              "P02": [],
+              "P01": [],
+              "P04": [],
+              "P03": [],
+              "P05": []
+            },
+            "score": "1/5",
+            "errors": [
+              {
+                "pid": "P02",
+                "name": "Chiara V., 28F",
+                "expected": [
+                  "Rapid Response",
+                  "Stretcher"
+                ],
+                "placed": [],
+                "missing": [
+                  "Rapid Response",
+                  "Stretcher"
+                ],
+                "extra": [],
+                "explanation": "Chiara is Pulmonary with SpO2 87% \u2014 Critical. She is Lethargic with Sudden onset, which puts her first among all patients. She also needs a Stretcher and Rapid Response."
+              },
+              {
+                "pid": "P01",
+                "name": "Marco T., 54M",
+                "expected": [
+                  "Rapid Response"
+                ],
+                "placed": [],
+                "missing": [
+                  "Rapid Response"
+                ],
+                "extra": [],
+                "explanation": "Marco is Cardiac with HR 142 \u2014 that is Critical. He has Sudden onset and is Alert, so he goes second among the Critical patients."
+              },
+              {
+                "pid": "P04",
+                "name": "Yuki T., 61F",
+                "expected": [
+                  "Stretcher"
+                ],
+                "placed": [],
+                "missing": [
+                  "Stretcher"
+                ],
+                "extra": [],
+                "explanation": "Yuki is Infectious with Temp 39.4 and HR 112 \u2014 both Critical thresholds, so she is Critical. Progressive onset places her third among Critical patients. Important: no Rapid Response for Infectious \u2014 that only applies to Cardiac and Pulmonary."
+              },
+              {
+                "pid": "P03",
+                "name": "Elena C., 42F",
+                "expected": [
+                  "Interpreter"
+                ],
+                "placed": [],
+                "missing": [
+                  "Interpreter"
+                ],
+                "extra": [],
+                "explanation": "Elena is Cardiac with HR 115 \u2014 that makes her Moderate. With Sudden onset, Cardiac Moderate goes to Acute Medical, not Monitored Ward. She also needs Interpreter support."
+              }
+            ],
+            "timestamp": "2026-04-15T20:32:37.697723"
+          }
+        ],
+        "final_score": null
+      },
+      "destinations": {
+        "attempts": [],
+        "final_score": null
+      },
+      "completed": false
+    }
+  }
+}

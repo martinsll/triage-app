@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Triage Training — Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:24px}
+.wrap{max-width:900px;margin:0 auto}
+h1{font-size:22px;font-weight:500;margin-bottom:4px}
+.sub{font-size:13px;color:#888;margin-bottom:24px}
+table{width:100%;background:#fff;border-radius:12px;border:0.5px solid #e0ddd5;border-collapse:collapse;overflow:hidden}
+th{background:#f5f4f0;padding:10px 14px;font-size:11px;font-weight:500;color:#666;text-align:left;border-bottom:0.5px solid #e0ddd5;white-space:nowrap}
+td{padding:10px 14px;font-size:12px;border-bottom:0.5px solid #f0ede5;vertical-align:top}
+tr:last-child td{border-bottom:none}
+.ok{color:#3B6D11;font-weight:500}.warn{color:#854F0B;font-weight:500}.bad{color:#A32D2D;font-weight:500}
+.badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;border:0.5px solid #d0cdc5;color:#666;background:#fff}
+.done-badge{background:#EAF3DE;border-color:#63c584;color:#3B6D11}
+.btn{padding:6px 14px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:12px;cursor:pointer}
+.btn:hover{background:#f0ede5}
+.top-row{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.export-btn{margin-left:auto;padding:8px 16px;border-radius:8px;border:0.5px solid #d0cdc5;background:#fff;font-size:13px;cursor:pointer}
+.export-btn:hover{background:#f0ede5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-row">
+    <div>
+      <h1>Experimenter view</h1>
+      <p class="sub">{{ sessions|length }} session(s) recorded</p>
+    </div>
+    <button class="export-btn" onclick="exportCSV()">Export CSV</button>
+    <a href="/"><button class="export-btn">← Back</button></a>
+  </div>
+
+  {% if sessions %}
+  <table>
+    <thead>
+      <tr>
+        <th>Participant</th><th>Set</th><th>Date</th><th>Groups</th>
+        <th>Reading time</th>
+        <th>Selection</th><th>Processes</th><th>Destinations</th><th>Total</th><th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for s in sessions %}
+      {% set max_each = s.groups|length * 5 %}
+      {% set max_total = max_each * 3 %}
+      {% set total_sel = 0 %}{% set total_proc = 0 %}{% set total_dest = 0 %}
+      {% for grp_key, it in s.iterations.items() %}
+        {% set fs = it.selection.final_score or (it.selection.attempts[-1].score if it.selection.attempts else '0/5') %}
+        {% set fp = it.processes.final_score or (it.processes.attempts[-1].score if it.processes.attempts else '0/5') %}
+        {% set fd = it.destinations.final_score or (it.destinations.attempts[-1].score if it.destinations.attempts else '0/5') %}
+        {% set total_sel = total_sel + fs.split('/')[0]|int %}
+        {% set total_proc = total_proc + fp.split('/')[0]|int %}
+        {% set total_dest = total_dest + fd.split('/')[0]|int %}
+      {% endfor %}
+      {% set total = total_sel + total_proc + total_dest %}
+      <tr>
+        <td><strong>{{ s.participant_id }}</strong></td>
+        <td><span class="badge">Set {{ s.set }}</span></td>
+        <td>{{ s.created_at[:16]|replace('T',' ') }}</td>
+        <td>{{ s.groups|join(', ') }}</td>
+        <td style="color:#555">
+          {% if s.onboarding is defined %}
+            {{ s.onboarding.instructions_time_sec }}s + {{ s.onboarding.rules_time_sec }}s
+          {% else %}—{% endif %}
+        </td>
+        <td class="{{ 'ok' if total_sel==max_each else 'warn' if total_sel>=max_each*0.6 else 'bad' }}">{{ total_sel }}/{{ max_each }}</td>
+        <td class="{{ 'ok' if total_proc==max_each else 'warn' if total_proc>=max_each*0.6 else 'bad' }}">{{ total_proc }}/{{ max_each }}</td>
+        <td class="{{ 'ok' if total_dest==max_each else 'warn' if total_dest>=max_each*0.6 else 'bad' }}">{{ total_dest }}/{{ max_each }}</td>
+        <td class="{{ 'ok' if total==max_total else 'warn' if total>=max_total*0.6 else 'bad' }}"><strong>{{ total }}/{{ max_total }}</strong></td>
+        <td><span class="badge {{ 'done-badge' if s.completed_at else '' }}">{{ 'complete' if s.completed_at else 'in progress' }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:#888;font-size:14px;padding:40px 0;text-align:center">No sessions recorded yet.</p>
+  {% endif %}
+</div>
+
+<script>
+async function exportCSV(){
+  const res=await fetch('/api/sessions');
+  const sessions=await res.json();
+  const rows=[['participant_id','set','groups','date','sel_total','proc_total','dest_total','grand_total','completed']];
+  sessions.forEach(s=>{
+    const maxEach=s.groups.length*5;
+    let tSel=0,tProc=0,tDest=0;
+    Object.values(s.iterations).forEach(it=>{
+      const fs=it.selection.final_score||(it.selection.attempts.at(-1)?.score||'0/5');
+      const fp=it.processes.final_score||(it.processes.attempts.at(-1)?.score||'0/5');
+      const fd=it.destinations.final_score||(it.destinations.attempts.at(-1)?.score||'0/5');
+      tSel+=parseInt(fs);tProc+=parseInt(fp);tDest+=parseInt(fd);
+    });
+    rows.push([s.participant_id,s.set,s.groups.join('-'),s.created_at.slice(0,16),
+      `${tSel}/${maxEach}`,`${tProc}/${maxEach}`,`${tDest}/${maxEach}`,
+      `${tSel+tProc+tDest}/${maxEach*3}`,s.completed_at?'yes':'no']);
+  });
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='triage_sessions.csv';a.click();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Triage Training — Results</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:24px}
+.wrap{max-width:720px;margin:0 auto}
+h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
+.sub{font-size:13px;color:#888;margin-bottom:28px}
+.scores-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.score-card{background:#fff;border:0.5px solid #e0ddd5;border-radius:12px;padding:14px;text-align:center}
+.score-label{font-size:11px;color:#888;margin-bottom:4px}
+.score-val{font-size:22px;font-weight:500}
+.ok{color:#3B6D11}.warn{color:#854F0B}.bad{color:#A32D2D}
+.group-block{background:#fff;border:0.5px solid #e0ddd5;border-radius:12px;padding:16px;margin-bottom:12px}
+.group-title{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid #f0ede5}
+.phase-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:12px;border-bottom:0.5px solid #f5f2ec}
+.phase-row:last-child{border-bottom:none}
+.phase-name{color:#666}
+.attempts{color:#aaa;font-size:11px}
+.btn-row{display:flex;gap:10px;margin-top:24px}
+.btn{padding:10px 20px;border-radius:8px;border:0.5px solid #d0cdc5;background:#fff;font-size:13px;cursor:pointer;color:#333}
+.btn:hover{background:#f0ede5}
+.btn-primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn-primary:hover{background:#333}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Session complete</h1>
+  <p class="sub">Participant: {{ sess.participant_id }} · Set {{ sess.set }} · {{ sess.created_at[:10] }}</p>
+
+  {% set total_sel = 0 %}{% set total_proc = 0 %}{% set total_dest = 0 %}
+  {% for grp_key, it in sess.iterations.items() %}
+    {% set sel_score = it.selection.final_score or it.selection.attempts[-1].score if it.selection.attempts else '0/5' %}
+    {% set proc_score = it.processes.final_score or it.processes.attempts[-1].score if it.processes.attempts else '0/5' %}
+    {% set dest_score = it.destinations.final_score or it.destinations.attempts[-1].score if it.destinations.attempts else '0/5' %}
+    {% set total_sel = total_sel + sel_score.split('/')[0]|int %}
+    {% set total_proc = total_proc + proc_score.split('/')[0]|int %}
+    {% set total_dest = total_dest + dest_score.split('/')[0]|int %}
+  {% endfor %}
+  {% set total = total_sel + total_proc + total_dest %}
+  {% set max_each = sess.groups|length * 5 %}
+  {% set max_total = max_each * 3 %}
+
+  <div class="scores-grid">
+    <div class="score-card">
+      <div class="score-label">Selection</div>
+      <div class="score-val {{ 'ok' if total_sel == max_each else 'warn' if total_sel >= max_each*0.6 else 'bad' }}">{{ total_sel }}/{{ max_each }}</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Processes</div>
+      <div class="score-val {{ 'ok' if total_proc == max_each else 'warn' if total_proc >= max_each*0.6 else 'bad' }}">{{ total_proc }}/{{ max_each }}</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Destinations</div>
+      <div class="score-val {{ 'ok' if total_dest == max_each else 'warn' if total_dest >= max_each*0.6 else 'bad' }}">{{ total_dest }}/{{ max_each }}</div>
+    </div>
+    <div class="score-card" style="border-color:#378ADD">
+      <div class="score-label">Total</div>
+      <div class="score-val {{ 'ok' if total == max_total else 'warn' if total >= max_total*0.6 else 'bad' }}">{{ total }}/{{ max_total }}</div>
+    </div>
+  </div>
+
+  {% for grp_key, it in sess.iterations.items()|sort %}
+  <div class="group-block">
+    <div class="group-title">Group {{ it.group }}</div>
+    {% for phase_name, phase_data in [('Selection', it.selection), ('Processes', it.processes), ('Destinations', it.destinations)] %}
+    <div class="phase-row">
+      <span class="phase-name">{{ phase_name }}</span>
+      <span class="attempts">{{ phase_data.attempts|length }} attempt(s)</span>
+      {% set fs = phase_data.final_score or (phase_data.attempts[-1].score if phase_data.attempts else '—') %}
+      <span class="{{ 'ok' if fs == '5/5' else 'warn' if fs.startswith('3') or fs.startswith('4') else 'bad' }}">{{ fs }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  <div class="btn-row">
+    <a href="/"><button class="btn btn-primary">New session</button></a>
+    <a href="/admin"><button class="btn">Experimenter view</button></a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,188 @@
+{
+  "session_id": "Marti_20260415_220127",
+  "participant_id": "Marti",
+  "set": "A",
+  "groups": [
+    1,
+    2,
+    3
+  ],
+  "language": "en",
+  "created_at": "2026-04-15T22:01:27.907416",
+  "completed_at": null,
+  "iterations": {
+    "1": {
+      "group": 1,
+      "selection": {
+        "attempts": [
+          {
+            "attempt": 1,
+            "placed": {
+              "1": "P02",
+              "2": "P01",
+              "3": "P04",
+              "4": "P03",
+              "5": "P05"
+            },
+            "score": "5/5",
+            "errors": [],
+            "timestamp": "2026-04-15T22:01:53.768674"
+          }
+        ],
+        "final_score": "5/5",
+        "questions_asked": 0
+      },
+      "processes": {
+        "attempts": [
+          {
+            "attempt": 1,
+            "placed": {
+              "P02": [
+                "Rapid Response"
+              ],
+              "P01": [
+                "Stretcher"
+              ],
+              "P04": [
+                "Rapid Response"
+              ],
+              "P03": [
+                "Companion Bay"
+              ],
+              "P05": [
+                "Companion Bay"
+              ]
+            },
+            "score": "0/5",
+            "errors": [
+              {
+                "pid": "P02",
+                "name": "Chiara V., 28F",
+                "expected": [
+                  "Rapid Response",
+                  "Stretcher"
+                ],
+                "placed": [
+                  "Rapid Response"
+                ],
+                "missing": [
+                  "Stretcher"
+                ],
+                "extra": [],
+                "explanation": "Chiara is Pulmonary with SpO2 87% \u2014 Critical. She is Lethargic with Sudden onset, which puts her first among all patients. She also needs a Stretcher and Rapid Response."
+              },
+              {
+                "pid": "P01",
+                "name": "Marco T., 54M",
+                "expected": [
+                  "Rapid Response"
+                ],
+                "placed": [
+                  "Stretcher"
+                ],
+                "missing": [
+                  "Rapid Response"
+                ],
+                "extra": [
+                  "Stretcher"
+                ],
+                "explanation": "Marco is Cardiac with HR 142 \u2014 that is Critical. He has Sudden onset and is Alert, so he goes second among the Critical patients."
+              },
+              {
+                "pid": "P04",
+                "name": "Yuki T., 61F",
+                "expected": [
+                  "Stretcher"
+                ],
+                "placed": [
+                  "Rapid Response"
+                ],
+                "missing": [
+                  "Stretcher"
+                ],
+                "extra": [
+                  "Rapid Response"
+                ],
+                "explanation": "Yuki is Infectious with Temp 39.4 and HR 112 \u2014 both Critical thresholds, so she is Critical. Progressive onset places her third among Critical patients. Important: no Rapid Response for Infectious \u2014 that only applies to Cardiac and Pulmonary."
+              },
+              {
+                "pid": "P03",
+                "name": "Elena C., 42F",
+                "expected": [
+                  "Interpreter"
+                ],
+                "placed": [
+                  "Companion Bay"
+                ],
+                "missing": [
+                  "Interpreter"
+                ],
+                "extra": [
+                  "Companion Bay"
+                ],
+                "explanation": "Elena is Cardiac with HR 115 \u2014 that makes her Moderate. With Sudden onset, Cardiac Moderate goes to Acute Medical, not Monitored Ward. She also needs Interpreter support."
+              },
+              {
+                "pid": "P05",
+                "name": "David W., 58M",
+                "expected": [],
+                "placed": [
+                  "Companion Bay"
+                ],
+                "missing": [],
+                "extra": [
+                  "Companion Bay"
+                ],
+                "explanation": "David is Neurological, Alert with normal BP \u2014 that is Stable. However his onset is Sudden, so a Stable Neurological patient with Sudden onset goes to Monitored Ward, not General Ward."
+              }
+            ],
+            "timestamp": "2026-04-15T22:02:23.868565"
+          }
+        ],
+        "final_score": null
+      },
+      "destinations": {
+        "attempts": [
+          {
+            "attempt": 1,
+            "placed": {
+              "P02": "Acute Medical",
+              "P01": "Acute Medical",
+              "P04": "General Ward",
+              "P03": "Surgical Bay",
+              "P05": "General Ward"
+            },
+            "score": "2/5",
+            "errors": [
+              {
+                "pid": "P04",
+                "name": "Yuki T., 61F",
+                "expected": "Monitored Ward",
+                "placed": "General Ward",
+                "explanation": "Yuki is Infectious with Temp 39.4 and HR 112 \u2014 both Critical thresholds, so she is Critical. Progressive onset places her third among Critical patients. Important: no Rapid Response for Infectious \u2014 that only applies to Cardiac and Pulmonary."
+              },
+              {
+                "pid": "P03",
+                "name": "Elena C., 42F",
+                "expected": "Acute Medical",
+                "placed": "Surgical Bay",
+                "explanation": "Elena is Cardiac with HR 115 \u2014 that makes her Moderate. With Sudden onset, Cardiac Moderate goes to Acute Medical, not Monitored Ward. She also needs Interpreter support."
+              },
+              {
+                "pid": "P05",
+                "name": "David W., 58M",
+                "expected": "Monitored Ward",
+                "placed": "General Ward",
+                "explanation": "David is Neurological, Alert with normal BP \u2014 that is Stable. However his onset is Sudden, so a Stable Neurological patient with Sudden onset goes to Monitored Ward, not General Ward."
+              }
+            ],
+            "timestamp": "2026-04-15T22:03:21.389931"
+          }
+        ],
+        "final_score": null
+      },
+      "completed": true,
+      "completed_at": "2026-04-15T22:03:26.941169"
+    }
+  }
+}
