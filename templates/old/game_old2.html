@@ -571,10 +571,11 @@ function renderProcesses(){
     const curProcs=STATE.processes[pid]||[];
     rows+=`<tr>
       <td style="min-width:220px">
-        <div style="margin-bottom:4px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${COND_COLORS[p.condition]};flex-shrink:0"></div>
           <strong>${pid}</strong> ${p.name}
         </div>
-        <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;margin-bottom:4px;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${p.condition}</span>
+        <span class="risk-tag risk-${p.risk}">${p.condition} · ${p.risk}</span>
         <div class="patient-mini">${vitalMini(p)}</div>
         <div style="font-size:11px;color:#aaa;margin-top:2px">${p.alertness} · ${p.onset} · ${p.mobility==='Non-Ambulatory'?'Non-Amb':'Ambulatory'} · ${p.companion} · ${p.cooperation}</div>
       </td>
