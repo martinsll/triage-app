@@ -267,6 +267,10 @@ const COND_COLORS={Cardiac:'#E24B4A',Pulmonary:'#378ADD',Neurological:'#7F77DD',
 const PROCESSES=["Rapid Response","Stretcher","Companion Bay","Interpreter"];
 const DESTINATIONS=["Surgical Bay","Risk Ward","Monitored Ward","General Ward"];
 
+function riskBg(r){return r==='Critical'?'#FCEBEB':r==='Moderate'?'#FAEEDA':'#EAF3DE';}
+function riskTx(r){return r==='Critical'?'#A32D2D':r==='Moderate'?'#854F0B':'#3B6D11';}
+function riskTag(r){return `<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${riskBg(r)};color:${riskTx(r)}">${r}</span>`;}
+
 let STATE={
   phase:'selection',
   gamePhase:'train',   // train | test
@@ -587,7 +591,7 @@ function renderProcesses(){
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
           <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${p.condition}</span>
-          <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${{'Critical':'#FCEBEB','Moderate':'#FAEEDA','Stable':'#EAF3DE'}[p.risk]};color:${{'Critical':'#A32D2D','Moderate':'#854F0B','Stable':'#3B6D11'}[p.risk]}">${p.risk}</span>
+          ${riskTag(p.risk)}
         </div>
         <div class="patient-mini">${vitalMini(p)}</div>
         <div style="font-size:11px;color:#aaa;margin-top:2px">${p.alertness} · ${p.onset} · ${p.mobility==='Non-Ambulatory'?'Non-Amb':'Ambulatory'} · ${p.companion} · ${p.cooperation}</div>
@@ -702,7 +706,7 @@ function renderDestinations(){
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
           <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${p.condition}</span>
-          <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${{'Critical':'#FCEBEB','Moderate':'#FAEEDA','Stable':'#EAF3DE'}[p.risk]};color:${{'Critical':'#A32D2D','Moderate':'#854F0B','Stable':'#3B6D11'}[p.risk]}">${p.risk}</span>
+          ${riskTag(p.risk)}
           <span style="font-size:11px;color:#888">${p.onset}</span>
         </div>
         <div class="patient-mini">${vitalMini(p)}</div>
