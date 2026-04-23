@@ -109,9 +109,6 @@ select:focus{border-color:#378ADD}
     <span class="badge" id="set-badge">Set A</span>
     <span class="badge" id="group-badge">Group 1</span>
     <span class="badge" id="lang-badge">EN</span>
-    <div id="test-banner" style="display:none;align-items:center;gap:6px;padding:3px 10px;border-radius:6px;background:#FFF8EE;border:0.5px solid #F5C842;font-size:11px;font-weight:500;color:#854F0B">
-      ⏱ Timed phase
-    </div>
     <div class="progress" id="phase-progress"></div>
     <button class="btn-rules" onclick="openRules()">Rules</button>
   </div>
@@ -229,7 +226,7 @@ select:focus{border-color:#378ADD}
       <thead><tr style="background:#f5f4f0">
         <th style="padding:5px 8px;text-align:left;border:0.5px solid #e0ddd5"></th>
         <th style="padding:5px 8px;text-align:center;border:0.5px solid #e0ddd5;font-size:10px">Surgical Bay</th>
-        <th style="padding:5px 8px;text-align:center;border:0.5px solid #e0ddd5;font-size:10px">Risk Ward</th>
+        <th style="padding:5px 8px;text-align:center;border:0.5px solid #e0ddd5;font-size:10px">Acute Medical</th>
         <th style="padding:5px 8px;text-align:center;border:0.5px solid #e0ddd5;font-size:10px">Monitored Ward</th>
         <th style="padding:5px 8px;text-align:center;border:0.5px solid #e0ddd5;font-size:10px">General Ward</th>
       </tr>
@@ -265,11 +262,10 @@ select:focus{border-color:#378ADD}
 <script>
 const COND_COLORS={Cardiac:'#E24B4A',Pulmonary:'#378ADD',Neurological:'#7F77DD',Trauma:'#BA7517',Infectious:'#1D9E75'};
 const PROCESSES=["Rapid Response","Stretcher","Companion Bay","Interpreter"];
-const DESTINATIONS=["Surgical Bay","Risk Ward","Monitored Ward","General Ward"];
+const DESTINATIONS=["Surgical Bay","Acute Medical","Monitored Ward","General Ward"];
 
 let STATE={
   phase:'selection',
-  gamePhase:'train',   // train | test
   patients:[],
   correctOrder:[],
   group:1,groupIndex:0,totalGroups:3,
@@ -281,10 +277,12 @@ let STATE={
   lastFeedback:null,
   selectionDone:false,
   processesDone:false,
+  // ── Timing ──
   sessionStart:null,
   phaseStart:null,
-  phaseTimes:{},
-  ruleConsultations:[],
+  phaseTimes:{},       // {phase: total_ms}
+  // ── Rule consultations ──
+  ruleConsultations:[], // [{phase, opened_at, duration_ms}]
   ruleOpenedAt:null,
 };
 
@@ -311,7 +309,6 @@ async function loadGroup(){
   STATE.totalGroups=data.total_groups;
   STATE.set=data.set;
   STATE.language=data.language;
-  STATE.gamePhase=data.phase||'train';
   STATE.selection={};STATE.selectedCard=null;
   STATE.processes=Object.fromEntries(data.patients.map(p=>[p.pid,[]]));
   STATE.destinations=Object.fromEntries(data.patients.map(p=>[p.pid,'']));
@@ -319,15 +316,7 @@ async function loadGroup(){
   STATE.selectionDone=false;STATE.processesDone=false;
   STATE.phaseTimes={};STATE.phaseStart=now();
   STATE.ruleConsultations=[];
-  if(!STATE.sessionStart){
-    STATE.sessionStart=now();
-    // Record game start time on server
-    fetch('/api/record_game_start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-  }
-
-  // Show test mode banner if in test phase
-  const testBanner=document.getElementById('test-banner');
-  if(testBanner) testBanner.style.display=STATE.gamePhase==='test'?'flex':'none';
+  if(!STATE.sessionStart) STATE.sessionStart=now();
 
   document.getElementById('set-badge').textContent='Set '+STATE.set;
   document.getElementById('group-badge').textContent='Group '+STATE.group;
@@ -585,10 +574,7 @@ function renderProcesses(){
         <div style="margin-bottom:4px">
           <strong>${pid}</strong> ${p.name}
         </div>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
-          <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${p.condition}</span>
-          <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${{'Critical':'#FCEBEB','Moderate':'#FAEEDA','Stable':'#EAF3DE'}[p.risk]};color:${{'Critical':'#A32D2D','Moderate':'#854F0B','Stable':'#3B6D11'}[p.risk]}">${p.risk}</span>
-        </div>
+        <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;margin-bottom:4px;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${p.condition}</span>
         <div class="patient-mini">${vitalMini(p)}</div>
         <div style="font-size:11px;color:#aaa;margin-top:2px">${p.alertness} · ${p.onset} · ${p.mobility==='Non-Ambulatory'?'Non-Amb':'Ambulatory'} · ${p.companion} · ${p.cooperation}</div>
       </td>
@@ -697,16 +683,13 @@ function renderDestinations(){
     const opts=DESTINATIONS.map(d=>`<option value="${d}" ${cur===d?'selected':''}>${d}</option>`).join('');
     rows+=`<tr>
       <td style="min-width:220px">
-        <div style="margin-bottom:4px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <strong>${pid}</strong> ${p.name}
         </div>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
-          <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${p.condition}</span>
-          <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${{'Critical':'#FCEBEB','Moderate':'#FAEEDA','Stable':'#EAF3DE'}[p.risk]};color:${{'Critical':'#A32D2D','Moderate':'#854F0B','Stable':'#3B6D11'}[p.risk]}">${p.risk}</span>
-          <span style="font-size:11px;color:#888">${p.onset}</span>
-        </div>
+        <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;margin-bottom:4px;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${p.condition}</span>
+        <span style="font-size:11px;color:#888;margin-left:4px">${p.risk} · ${p.onset}</span>
         <div class="patient-mini">${vitalMini(p)}</div>
-        <div style="font-size:11px;color:#aaa;margin-top:2px">${p.alertness} · ${p.mobility==='Non-Ambulatory'?'Non-Amb':'Ambulatory'} · <strong style="color:#555">${p.companion}</strong></div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px">${p.alertness} · ${p.mobility==='Non-Ambulatory'?'Non-Ambulatory':'Ambulatory'}</div>
       </td>
       <td>
         <select onchange="setDest('${pid}',this.value)">
@@ -786,13 +769,8 @@ async function completeGroup(){
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({group:STATE.group})});
   const data=await res.json();
-  if(data.done){
-    if(data.next==='transition') window.location.href='/transition';
-    else if(data.next==='results') window.location.href='/questionnaire';
-    else window.location.href='/questionnaire';
-  } else {
-    loadGroup();
-  }
+  if(data.done){window.location.href='/results';}
+  else{loadGroup();}
 }
 
 // ── START ─────────────────────────────────────────────────────────────────────

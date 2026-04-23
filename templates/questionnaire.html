@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triage Training — Questionnaire</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:32px 24px}
+  .wrap{max-width:640px;margin:0 auto}
+  .header{margin-bottom:32px}
+  h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:6px}
+  .sub{font-size:14px;color:#888;line-height:1.5}
+  .question{background:#fff;border-radius:12px;border:0.5px solid #e0ddd5;padding:22px 24px;margin-bottom:14px}
+  .q-num{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px}
+  .q-text{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:14px;line-height:1.5}
+  .q-sub{font-size:12px;color:#888;margin-bottom:12px;margin-top:-8px}
+
+  /* Likert */
+  .likert{display:flex;gap:8px;flex-wrap:wrap}
+  .likert-opt{flex:1;min-width:52px;padding:8px 4px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:12px;text-align:center;cursor:pointer;transition:all 0.12s;color:#555;line-height:1.3}
+  .likert-opt:hover{border-color:#888}
+  .likert-opt.selected{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+  .likert-labels{display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:4px;padding:0 2px}
+
+  /* Multiple choice */
+  .mc-opts{display:flex;flex-direction:column;gap:6px}
+  .mc-opt{padding:10px 14px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:13px;cursor:pointer;transition:all 0.12s;color:#444;text-align:left}
+  .mc-opt:hover{border-color:#888}
+  .mc-opt.selected{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+
+  /* Text */
+  textarea{width:100%;padding:10px 12px;border:0.5px solid #d0cdc5;border-radius:8px;font-size:13px;font-family:inherit;outline:none;resize:vertical;min-height:80px;transition:border-color 0.15s;color:#333}
+  textarea:focus{border-color:#378ADD}
+  textarea::placeholder{color:#bbb}
+
+  .submit-btn{width:100%;padding:14px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-top:8px;transition:opacity 0.15s}
+  .submit-btn:hover{opacity:0.85}
+  .section-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin:24px 0 10px}
+  .required{color:#E24B4A;margin-left:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1>Questionnaire</h1>
+    <p class="sub">Please answer all questions honestly. There are no right or wrong answers. Your responses will be kept confidential.</p>
+  </div>
+
+  <!-- SECTION 1: Task experience -->
+  <div class="section-label">Task experience</div>
+
+  <div class="question" id="q1">
+    <div class="q-num">Question 1</div>
+    <div class="q-text">How difficult did you find the triage task overall?<span class="required">*</span></div>
+    <div class="likert" data-q="q1">
+      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">Very easy</span></div>
+      <div class="likert-opt" data-val="2">2</div>
+      <div class="likert-opt" data-val="3">3</div>
+      <div class="likert-opt" data-val="4">4</div>
+      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">Very hard</span></div>
+    </div>
+  </div>
+
+  <div class="question" id="q2">
+    <div class="q-num">Question 2</div>
+    <div class="q-text">How confident did you feel in your triage decisions during the timed phase?<span class="required">*</span></div>
+    <div class="likert" data-q="q2">
+      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">Not at all</span></div>
+      <div class="likert-opt" data-val="2">2</div>
+      <div class="likert-opt" data-val="3">3</div>
+      <div class="likert-opt" data-val="4">4</div>
+      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">Very confident</span></div>
+    </div>
+  </div>
+
+  <div class="question" id="q3">
+    <div class="q-num">Question 3</div>
+    <div class="q-text">How much did the training phase help you in the timed phase?<span class="required">*</span></div>
+    <div class="likert" data-q="q3">
+      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">Not at all</span></div>
+      <div class="likert-opt" data-val="2">2</div>
+      <div class="likert-opt" data-val="3">3</div>
+      <div class="likert-opt" data-val="4">4</div>
+      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">A lot</span></div>
+    </div>
+  </div>
+
+  <div class="question" id="q4">
+    <div class="q-num">Question 4</div>
+    <div class="q-text">Which phase of the task did you find most challenging?<span class="required">*</span></div>
+    <div class="mc-opts" data-q="q4">
+      <div class="mc-opt" data-val="selection">Step 1 — Selection order</div>
+      <div class="mc-opt" data-val="processes">Step 2 — Additional processes</div>
+      <div class="mc-opt" data-val="destinations">Step 3 — Destinations</div>
+      <div class="mc-opt" data-val="all_equally">All equally challenging</div>
+      <div class="mc-opt" data-val="none">None — it was straightforward</div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Learning and rules -->
+  <div class="section-label">Learning and rules</div>
+
+  <div class="question" id="q5">
+    <div class="q-num">Question 5</div>
+    <div class="q-text">How clear did you find the triage rules?<span class="required">*</span></div>
+    <div class="likert" data-q="q5">
+      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">Very unclear</span></div>
+      <div class="likert-opt" data-val="2">2</div>
+      <div class="likert-opt" data-val="3">3</div>
+      <div class="likert-opt" data-val="4">4</div>
+      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">Very clear</span></div>
+    </div>
+  </div>
+
+  <div class="question" id="q6">
+    <div class="q-num">Question 6</div>
+    <div class="q-text">By the end of the timed phase, how well had you learned the rules?<span class="required">*</span></div>
+    <div class="likert" data-q="q6">
+      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">Not at all</span></div>
+      <div class="likert-opt" data-val="2">2</div>
+      <div class="likert-opt" data-val="3">3</div>
+      <div class="likert-opt" data-val="4">4</div>
+      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">Completely</span></div>
+    </div>
+  </div>
+
+  <div class="question" id="q7">
+    <div class="q-num">Question 7</div>
+    <div class="q-text">Do you think having a robot assistant would have helped you perform the task better?<span class="required">*</span></div>
+    <div class="mc-opts" data-q="q7">
+      <div class="mc-opt" data-val="yes_definitely">Yes, definitely</div>
+      <div class="mc-opt" data-val="yes_probably">Yes, probably</div>
+      <div class="mc-opt" data-val="no_difference">No difference</div>
+      <div class="mc-opt" data-val="no_probably">No, probably not</div>
+      <div class="mc-opt" data-val="no_definitely">No, definitely not</div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: Open-ended -->
+  <div class="section-label">Open-ended</div>
+
+  <div class="question" id="q8">
+    <div class="q-num">Question 8</div>
+    <div class="q-text">What was the most difficult aspect of the task for you?</div>
+    <textarea data-q="q8" placeholder="Write your answer here..."></textarea>
+  </div>
+
+  <div class="question" id="q9">
+    <div class="q-num">Question 9</div>
+    <div class="q-text">What would have helped you learn the triage rules more effectively?</div>
+    <textarea data-q="q9" placeholder="Write your answer here..."></textarea>
+  </div>
+
+  <div class="question" id="q10">
+    <div class="q-num">Question 10</div>
+    <div class="q-text">Any other comments or feedback about the experiment?</div>
+    <textarea data-q="q10" placeholder="Write your answer here..."></textarea>
+  </div>
+
+  <button class="submit-btn" onclick="submitQuestionnaire()">Submit →</button>
+</div>
+
+<script>
+const answers = {};
+
+// Likert click handlers
+document.querySelectorAll('.likert').forEach(group => {
+  group.querySelectorAll('.likert-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      group.querySelectorAll('.likert-opt').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      answers[group.dataset.q] = opt.dataset.val;
+    });
+  });
+});
+
+// Multiple choice handlers
+document.querySelectorAll('.mc-opts').forEach(group => {
+  group.querySelectorAll('.mc-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      group.querySelectorAll('.mc-opt').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      answers[group.dataset.q] = opt.dataset.val;
+    });
+  });
+});
+
+// Text handlers
+document.querySelectorAll('textarea').forEach(ta => {
+  ta.addEventListener('input', () => {
+    answers[ta.dataset.q] = ta.value.trim();
+  });
+});
+
+async function submitQuestionnaire(){
+  // Check required
+  const required = ['q1','q2','q3','q4','q5','q6','q7'];
+  const missing = required.filter(q => !answers[q]);
+  if(missing.length > 0){
+    missing.forEach(q => {
+      document.getElementById(q).scrollIntoView({behavior:'smooth', block:'center'});
+      document.getElementById(q).style.borderColor = '#E24B4A';
+    });
+    alert('Please answer all required questions (marked with *).');
+    return;
+  }
+
+  await fetch('/api/submit_questionnaire', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({answers})
+  });
+
+  window.location.href = '/results';
+}
+</script>
+</body>
+</html>

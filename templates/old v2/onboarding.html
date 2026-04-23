@@ -109,7 +109,7 @@ tr:nth-child(even) td{background:#f9f8f6}
         <div class="phase-box">
           <div class="phase-num">3</div>
           <div class="phase-title">Destinations</div>
-          <div class="phase-desc">Assign each patient to the correct hospital destination — for example Risk Ward, Monitored Ward, or Surgical Bay.</div>
+          <div class="phase-desc">Assign each patient to the correct hospital destination — for example Acute Medical, Monitored Ward, or Surgical Bay.</div>
         </div>
       </div>
 
@@ -169,45 +169,43 @@ tr:nth-child(even) td{background:#f9f8f6}
           <tr><td><strong>SpO2 (%)</strong></td><td>≥91</td><td>81–90</td><td>&lt;80</td></tr>
           <tr><td><strong>RR (/min)</strong></td><td>12–20</td><td>21–30</td><td>&gt;30 or &lt;10</td></tr>
           <tr><td><strong>Temp (°C)</strong></td><td>36–38</td><td>38–39</td><td>&gt;39 or &lt;35</td></tr>
+          <tr><td><strong>Alertness</strong></td><td>Alert</td><td>Confused</td><td>Lethargic</td></tr>
         </tbody>
       </table>
-      <p style="font-size:13px;color:#555;margin-top:8px"><strong>Alertness</strong> has three levels used in risk derivation: <span class="tag tag-stab">Oriented</span> (normal), <span class="tag tag-mod">Confused</span> (abnormal), <span class="tag tag-crit">Lethargic</span> (critical).</p>
 
       <h2>2. Risk derivation</h2>
-      <p>Each patient has a risk level: <span class="tag tag-crit">Critical</span>, <span class="tag tag-mod">Moderate</span>, or <span class="tag tag-stab">Stable</span>. The risk depends on the patient's condition and vital signs. <strong>Stable</strong> means none of the Critical or Moderate criteria are met.</p>
-      <p>Some patients will have abnormal vitals that are <strong>not relevant for their condition</strong> — for example, a high temperature in a Cardiac patient. Apply only the rules for the patient's specific condition and ignore the rest.</p>
-      <p style="font-size:12px;color:#666;margin-top:6px">Each row in the tables is an AND condition. Multiple rows per condition = OR between rows.</p>
-
-      <h3 style="font-size:13px;font-weight:600;color:#A32D2D;margin:14px 0 8px">Critical risk</h3>
+      <p>Each patient has one of three risk levels: <span class="tag tag-crit">Critical</span>, <span class="tag tag-mod">Moderate</span>, or <span class="tag tag-stab">Stable</span>. The risk depends on the patient's condition combined with their vital signs. Each row in the table below is an AND condition — all values in that row must be met. Multiple rows per condition means OR between them.</p>
+      <p>Some patients will have abnormal vitals that are <strong>not relevant for their condition</strong> — for example, a high temperature in a Cardiac patient, or a high HR in a Neurological patient. You must apply only the rules for the patient's specific condition and ignore the rest.</p>
       <table>
-        <thead><tr><th>Condition</th><th>HR</th><th>BP</th><th>SpO2</th><th>RR</th><th>Temp</th><th>Alertness</th><th>Mobility</th></tr></thead>
+        <thead>
+          <tr>
+            <th></th>
+            <th colspan="7" class="crit" style="text-align:center">CRITICAL</th>
+            <th colspan="7" class="mod" style="text-align:center">MODERATE</th>
+          </tr>
+          <tr style="font-size:11px">
+            <th></th>
+            <th>HR</th><th>BP</th><th>SpO2</th><th>RR</th><th>Temp</th><th>Alert.</th><th>Other</th>
+            <th>HR</th><th>BP</th><th>SpO2</th><th>RR</th><th>Temp</th><th>Alert.</th><th>Other</th>
+          </tr>
+        </thead>
         <tbody style="text-align:center;font-size:12px">
-          <tr><td style="text-align:left"><strong>Cardiac</strong></td><td style="background:#FEECEC">Critical</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-          <tr><td></td><td style="background:#FEECEC">Abnormal</td><td style="background:#FEECEC">Abnormal Low</td><td></td><td></td><td></td><td></td><td></td></tr>
-          <tr><td style="text-align:left"><strong>Pulmonary</strong></td><td></td><td></td><td style="background:#FEECEC">Critical</td><td></td><td></td><td></td><td></td></tr>
-          <tr><td></td><td></td><td></td><td style="background:#FEECEC">Abnormal</td><td style="background:#FEECEC">Critical</td><td></td><td></td><td></td></tr>
-          <tr><td style="text-align:left"><strong>Neurological</strong></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FEECEC">Lethargic</td><td></td></tr>
-          <tr><td style="text-align:left"><strong>Trauma</strong></td><td style="background:#FEECEC">Abnormal</td><td></td><td></td><td></td><td></td><td></td><td style="background:#FEECEC">Non-Ambulatory</td></tr>
-          <tr><td style="text-align:left"><strong>Infectious</strong></td><td style="background:#FEECEC">Abnormal</td><td></td><td></td><td></td><td style="background:#FEECEC">Critical</td><td></td><td></td></tr>
+          <tr><td style="text-align:left"><strong>Cardiac</strong></td><td style="background:#FEECEC">Crit</td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">High</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td></td><td style="background:#FEECEC">High</td><td style="background:#FEECEC">Low</td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">High/Low</td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td style="text-align:left"><strong>Pulmonary</strong></td><td></td><td></td><td style="background:#FEECEC">Crit</td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Abnorm</td><td></td><td></td><td></td><td></td></tr>
+          <tr><td></td><td></td><td></td><td style="background:#FEECEC">Abnorm</td><td style="background:#FEECEC">Crit</td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">High</td><td></td><td></td><td></td></tr>
+          <tr><td style="text-align:left"><strong>Neurological</strong></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FEECEC">Lethar.</td><td></td><td></td><td style="background:#FFF8EE">High</td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Confused</td><td></td></tr>
+          <tr><td style="text-align:left"><strong>Trauma</strong></td><td style="background:#FEECEC">High</td><td></td><td></td><td></td><td></td><td></td><td style="background:#FEECEC">Non-Amb</td><td style="background:#FFF8EE">High</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Non-Amb</td></tr>
+          <tr><td style="text-align:left"><strong>Infectious</strong></td><td style="background:#FEECEC">High</td><td></td><td></td><td></td><td style="background:#FEECEC">Crit</td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">High</td><td></td><td></td></tr>
+          <tr><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Crit</td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">High</td><td></td><td></td></tr>
         </tbody>
       </table>
 
-      <h3 style="font-size:13px;font-weight:600;color:#854F0B;margin:14px 0 8px">Moderate risk</h3>
-      <table>
-        <thead><tr><th>Condition</th><th>HR</th><th>BP</th><th>SpO2</th><th>RR</th><th>Temp</th><th>Alertness</th><th>Mobility</th></tr></thead>
-        <tbody style="text-align:center;font-size:12px">
-          <tr><td style="text-align:left"><strong>Cardiac</strong></td><td style="background:#FFF8EE">Abnormal</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-          <tr><td></td><td></td><td style="background:#FFF8EE">Abnormal</td><td></td><td></td><td></td><td></td><td></td></tr>
-          <tr><td style="text-align:left"><strong>Pulmonary</strong></td><td></td><td></td><td style="background:#FFF8EE">Abnormal</td><td></td><td></td><td></td><td></td></tr>
-          <tr><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Abnormal</td><td></td><td></td><td></td></tr>
-          <tr><td style="text-align:left"><strong>Neurological</strong></td><td></td><td style="background:#FFF8EE">Abnormal High</td><td></td><td></td><td></td><td></td><td></td></tr>
-          <tr><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Confused</td><td></td></tr>
-          <tr><td style="text-align:left"><strong>Trauma</strong></td><td style="background:#FFF8EE">Abnormal</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-          <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Non-Ambulatory</td></tr>
-          <tr><td style="text-align:left"><strong>Infectious</strong></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Abnormal</td><td></td><td></td></tr>
-          <tr><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Critical</td><td></td><td></td></tr>
-        </tbody>
-      </table>
+      <div class="note">
+        <strong>Stable</strong> = none of the Critical or Moderate conditions are met for the patient's condition.
+      </div>
 
       <h2>3. Selection order</h2>
       <p>Rank the five patients from most to least urgent using this three-level hierarchy. Only move to the next level when there is a tie at the current level.</p>
@@ -216,51 +214,67 @@ tr:nth-child(even) td{background:#f9f8f6}
         <tbody>
           <tr><td style="text-align:center"><strong>1</strong></td><td><strong>Risk level</strong></td><td class="crit">Critical</td><td class="mod">Moderate</td><td class="stab">Stable</td></tr>
           <tr><td style="text-align:center"><strong>2</strong></td><td><strong>Onset</strong> (tiebreak)</td><td>Sudden</td><td>Progressive</td><td>Recurring</td></tr>
-          <tr><td style="text-align:center"><strong>3</strong></td><td><strong>Alertness</strong> (tiebreak)</td><td>Lethargic</td><td>Confused</td><td>Oriented</td></tr>
+          <tr><td style="text-align:center"><strong>3</strong></td><td><strong>Alertness</strong> (tiebreak)</td><td>Lethargic</td><td>Confused</td><td>Alert</td></tr>
         </tbody>
       </table>
-      <div class="note">
-        <strong>AND / OR example:</strong> Two patients are both Critical with Sudden onset. To break the tie, look at Alertness — the Lethargic patient goes first, the Oriented patient goes second. All three levels must be checked in order before concluding a tie.
-      </div>
 
       <h2>4. Additional processes</h2>
-      <p>For each patient, check whether any of the four additional processes apply. Multiple processes can apply to the same patient. Check all four for every patient.</p>
+      <p>For each patient, check whether any of the four additional processes apply. Multiple processes can apply to the same patient. Check all four for every patient — do not skip any.</p>
+      <p>The table shows which risk level triggers each process per condition. The bottom rows show additional patient variables that must also be satisfied.</p>
       <table>
         <thead>
-          <tr><th></th><th style="text-align:center">Rapid Response</th><th style="text-align:center">Stretcher</th><th style="text-align:center">Companion Bay</th><th style="text-align:center">Interpreter</th></tr>
+          <tr>
+            <th></th>
+            <th style="text-align:center">Rapid Response</th>
+            <th style="text-align:center">Stretcher</th>
+            <th style="text-align:center">Companion Bay</th>
+            <th style="text-align:center">Interpreter</th>
+          </tr>
         </thead>
         <tbody style="text-align:center;font-size:12px">
-          <tr><td style="text-align:left"><strong>Cardiac</strong></td><td class="crit">Critical</td><td class="crit">Critical</td><td class="stab">Stable</td><td class="mod">Stable or Moderate</td></tr>
-          <tr><td style="text-align:left"><strong>Pulmonary</strong></td><td class="crit">Critical</td><td class="crit">Critical</td><td class="stab">Stable</td><td class="mod">Stable or Moderate</td></tr>
+          <tr><td style="text-align:left"><strong>Cardiac</strong></td><td class="crit">Critical</td><td class="crit">Critical</td><td class="stab">Stable</td><td class="mod">Stable–Mod</td></tr>
+          <tr><td style="text-align:left"><strong>Pulmonary</strong></td><td class="crit">Critical</td><td class="crit">Critical</td><td class="stab">Stable</td><td class="mod">Stable–Mod</td></tr>
           <tr><td style="text-align:left"><strong>Neurological</strong></td><td style="color:#ccc">—</td><td class="crit">Critical</td><td style="color:#ccc">—</td><td style="color:#ccc">—</td></tr>
           <tr><td style="text-align:left"><strong>Trauma</strong></td><td style="color:#ccc">—</td><td class="mod">Moderate</td><td class="stab">Stable</td><td style="color:#ccc">—</td></tr>
-          <tr><td style="text-align:left"><strong>Infectious</strong></td><td style="color:#ccc">—</td><td class="crit">Critical</td><td style="color:#ccc">—</td><td class="mod">Stable or Moderate</td></tr>
+          <tr><td style="text-align:left"><strong>Infectious</strong></td><td style="color:#ccc">—</td><td class="crit">Critical</td><td style="color:#ccc">—</td><td class="mod">Stable–Mod</td></tr>
           <tr style="border-top:1px solid #e0ddd5"><td style="text-align:left;color:#888">Mobility</td><td style="color:#ccc">—</td><td style="font-size:11px">Non-Ambulatory</td><td style="color:#ccc">—</td><td style="color:#ccc">—</td></tr>
           <tr><td style="text-align:left;color:#888">Companion</td><td style="color:#ccc">—</td><td style="color:#ccc">—</td><td style="font-size:11px">Accompanied</td><td style="font-size:11px">Unaccompanied</td></tr>
           <tr><td style="text-align:left;color:#888">Cooperation</td><td style="color:#ccc">—</td><td style="color:#ccc">—</td><td style="color:#ccc">—</td><td style="font-size:11px">Agitated</td></tr>
         </tbody>
       </table>
       <div class="note">
-        All conditions in a column must be met simultaneously. A single patient can have multiple additional processes. For example, for a Cardiac Stable patient: it will have <strong>Interpreter</strong> if the patient is Agitated + Unaccompanied. It will have <strong>Companion Bay</strong> if the patient is Accompanied. Both cannot apply to the same patient since Accompanied and Unaccompanied are mutually exclusive.
+        All conditions in a column must be met simultaneously. For example, Interpreter for a Cardiac patient requires: Cardiac + Agitated + Unaccompanied + Stable or Moderate.
       </div>
 
       <h2>5. Destinations</h2>
-      <p>Assign each patient to one of four destinations. Onset only matters for Cardiac and Neurological patients — for all others, risk level alone determines the destination.</p>
+      <p>Assign each patient to one of four destinations based on their condition, risk level, and onset. Onset only matters for certain combinations — where it is not listed, any onset leads to the same destination.</p>
       <table>
         <thead>
-          <tr><th></th><th></th><th style="text-align:center">Surgical Bay</th><th style="text-align:center">Risk Ward</th><th style="text-align:center">Monitored Ward</th><th style="text-align:center">General Ward</th></tr>
-          <tr style="font-size:11px;color:#888"><th></th><th></th><th style="text-align:center;font-weight:400">Onset</th><th style="text-align:center;font-weight:400">Onset</th><th style="text-align:center;font-weight:400">Onset</th><th style="text-align:center;font-weight:400">Onset</th></tr>
+          <tr>
+            <th></th><th></th>
+            <th style="text-align:center">Surgical Bay</th>
+            <th style="text-align:center">Acute Medical</th>
+            <th style="text-align:center">Monitored Ward</th>
+            <th style="text-align:center">General Ward</th>
+          </tr>
+          <tr style="font-size:11px;color:#888">
+            <th></th><th></th>
+            <th style="text-align:center;font-weight:400">Onset</th>
+            <th style="text-align:center;font-weight:400">Onset</th>
+            <th style="text-align:center;font-weight:400">Onset</th>
+            <th style="text-align:center;font-weight:400">Onset</th>
+          </tr>
         </thead>
         <tbody style="text-align:center;font-size:12px">
           <tr><td style="text-align:left" rowspan="3"><strong>Cardiac</strong></td><td class="crit">Critical</td><td></td><td>Any</td><td></td><td></td></tr>
-          <tr><td class="mod">Moderate</td><td></td><td>Sudden</td><td>Progressive / Recurring</td><td></td></tr>
-          <tr><td class="stab">Stable</td><td></td><td></td><td>Sudden</td><td>Progressive / Recurring</td></tr>
+          <tr><td class="mod">Moderate</td><td></td><td>Sudden</td><td>Prog / Rec</td><td></td></tr>
+          <tr><td class="stab">Stable</td><td></td><td></td><td>Sudden</td><td>Prog / Rec</td></tr>
           <tr><td style="text-align:left" rowspan="3"><strong>Pulmonary</strong></td><td class="crit">Critical</td><td></td><td>Any</td><td></td><td></td></tr>
           <tr><td class="mod">Moderate</td><td></td><td></td><td>Any</td><td></td></tr>
           <tr><td class="stab">Stable</td><td></td><td></td><td></td><td>Any</td></tr>
           <tr><td style="text-align:left" rowspan="3"><strong>Neurological</strong></td><td class="crit">Critical</td><td></td><td>Any</td><td></td><td></td></tr>
           <tr><td class="mod">Moderate</td><td></td><td></td><td>Any</td><td></td></tr>
-          <tr><td class="stab">Stable</td><td></td><td></td><td>Sudden</td><td>Progressive / Recurring</td></tr>
+          <tr><td class="stab">Stable</td><td></td><td></td><td>Sudden</td><td>Prog / Rec</td></tr>
           <tr><td style="text-align:left" rowspan="3"><strong>Trauma</strong></td><td class="crit">Critical</td><td>Any</td><td></td><td></td><td></td></tr>
           <tr><td class="mod">Moderate</td><td>Any</td><td></td><td></td><td></td></tr>
           <tr><td class="stab">Stable</td><td></td><td></td><td></td><td>Any</td></tr>
@@ -269,7 +283,9 @@ tr:nth-child(even) td{background:#f9f8f6}
           <tr><td class="stab">Stable</td><td></td><td></td><td></td><td>Any</td></tr>
         </tbody>
       </table>
-    </div>
+      <div class="note">
+        The onset modifier only applies to Cardiac and Neurological patients. For all other conditions, the destination depends only on risk level.
+      </div>
     </div>
 
     <div class="footer">
