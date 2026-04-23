@@ -143,6 +143,7 @@ def patient_for_client(p, set_label, include_answers=False):
     return d
 
 # ─── PATIENT DATABASE ─────────────────────────────────────────────────────────
+def ensure_iteration(sess, group):
     key = str(group)
     if key not in sess["iterations"]:
         sess["iterations"][key] = {
