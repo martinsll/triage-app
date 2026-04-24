@@ -113,10 +113,10 @@ select:focus{border-color:#378ADD}
       ⏱ Timed phase
     </div>
     <div class="progress" id="phase-progress"></div>
-    <button class="btn-rules" onclick="openRules()">{% if language == "es" %}Reglas{% else %}Rules{% endif %}</button>
+    <button class="btn-rules" onclick="openRules()">Rules</button>
   </div>
 
-  <div id="main-content"><div class="loading">{% if language == "es" %}Cargando pacientes...{% else %}Loading patients...{% endif %}</div></div>
+  <div id="main-content"><div class="loading">Loading patients...</div></div>
 </div>
 
 <!-- Rules side panel -->
@@ -264,79 +264,11 @@ select:focus{border-color:#378ADD}
       </tbody>
     </table>
 
-    <button onclick="closeRules()" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid #d0cdc5;background:#f5f4f0;cursor:pointer;font-size:13px;margin-top:4px">{% if language == "es" %}Cerrar{% else %}Close{% endif %}</button>
+    <button onclick="closeRules()" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid #d0cdc5;background:#f5f4f0;cursor:pointer;font-size:13px;margin-top:4px">Close</button>
   </div>
 </div>
 
 <script>
-const LANG = "{{ language }}";
-
-const _T = {
-  en: {
-    processes:    ["Rapid Response","Stretcher","Companion Bay","Interpreter"],
-    destinations: ["Surgical Bay","Risk Ward","Monitored Ward","General Ward"],
-    proc_display: {"Rapid Response":"Rapid Response","Stretcher":"Stretcher","Companion Bay":"Companion Bay","Interpreter":"Interpreter"},
-    dest_display: {"Surgical Bay":"Surgical Bay","Risk Ward":"Risk Ward","Monitored Ward":"Monitored Ward","General Ward":"General Ward"},
-    cond:{Cardiac:"Cardiac",Pulmonary:"Pulmonary",Neurological:"Neurological",Trauma:"Trauma",Infectious:"Infectious"},
-    risk:{Critical:"Critical",Moderate:"Moderate",Stable:"Stable"},
-    alert:{Oriented:"Oriented",Confused:"Confused",Lethargic:"Lethargic"},
-    onset:{Sudden:"Sudden",Progressive:"Progressive",Recurring:"Recurring"},
-    mob:{"Non-Ambulatory":"Non-Amb","Ambulatory":"Amb"},
-    comp:{Accompanied:"Accompanied",Unaccompanied:"Unaccomp."},
-    coop:{Cooperative:"Cooperative",Agitated:"Agitated"},
-    phase1_title:"Selection order",phase1_hint:"${T.phase1_hint}",
-    phase2_title:"Additional processes",phase2_hint:"${T.phase2_hint}",
-    phase3_title:"Destinations",phase3_hint:"${T.phase3_hint}",
-    btn_validate_sel:T.btn_validate_sel,btn_validate_proc:T.btn_validate_proc,btn_validate_dest:T.btn_validate_dest,
-    btn_next_proc:T.btn_next_proc,btn_next_dest:T.btn_next_dest,btn_next_group:T.btn_next_group,
-    btn_rearrange:T.btn_rearrange,btn_redo_proc:T.btn_redo_proc,btn_continue:T.btn_continue,btn_continue_proc:T.btn_continue_proc,
-    btn_rules:"Rules",slot_label:"Slot",slot_empty:"empty",slot_click:"click to place",
-    all_assigned:T.all_assigned,unassigned_hint:T.unassigned_hint,
-    score_prefix:"Score:",attempt_label:"attempt",
-    all_sel_correct:T.all_sel_correct,all_proc_correct:T.all_proc_correct,all_dest_correct:T.all_dest_correct,
-    select_dest:"select destination...",proc_col:"Processes (click to toggle)",patient_col:"Patient",dest_col:"Destination",
-    timed_badge:"⏱ Timed phase",loading:"Loading patients...",
-    err_slot:"slot",err_expected:"expected",err_placed:"placed",err_missing:"Missing",err_extra:"Remove",
-    rules_title:"Triage Rules",close:"Close",group_word:"Group",
-  },
-  es: {
-    processes:    ["Respuesta Rápida","Camilla","Sala Acompañante","Intérprete"],
-    destinations: ["Quirófano","Sala de Riesgo","Sala Vigilada","Planta General"],
-    proc_display: {"Rapid Response":"Respuesta Rápida","Stretcher":"Camilla","Companion Bay":"Sala Acompañante","Interpreter":"Intérprete"},
-    dest_display: {"Surgical Bay":"Quirófano","Risk Ward":"Sala de Riesgo","Monitored Ward":"Sala Vigilada","General Ward":"Planta General"},
-    cond:{Cardiac:"Cardiaco",Pulmonary:"Pulmonar",Neurological:"Neurológico",Trauma:"Trauma",Infectious:"Infeccioso"},
-    risk:{Critical:"Crítico",Moderate:"Moderado",Stable:"Estable"},
-    alert:{Oriented:"Orientado",Confused:"Confuso",Lethargic:"Letárgico"},
-    onset:{Sudden:"Súbito",Progressive:"Progresivo",Recurring:"Recurrente"},
-    mob:{"Non-Ambulatory":"No-Amb","Ambulatory":"Amb"},
-    comp:{Accompanied:"Acompañado",Unaccompanied:"Sin Acomp."},
-    coop:{Cooperative:"Cooperativo",Agitated:"Agitado"},
-    phase1_title:"Orden de selección",phase1_hint:"Haz clic en una tarjeta de paciente, luego en una ranura para asignarla. Clic en una ranura ocupada para limpiarla.",
-    phase2_title:"Procesos adicionales",phase2_hint:"Haz clic para alternar los procesos adicionales que aplican a cada paciente.",
-    phase3_title:"Destinos",phase3_hint:"Asigna cada paciente al destino hospitalario correcto.",
-    btn_validate_sel:"Validar selección →",btn_validate_proc:"Validar procesos →",btn_validate_dest:"Validar destinos →",
-    btn_next_proc:"Siguiente: Procesos →",btn_next_dest:"Siguiente: Destinos →",btn_next_group:"Siguiente grupo →",
-    btn_rearrange:"← Reordenar",btn_redo_proc:"← Rehacer procesos",btn_continue:"Continuar →",btn_continue_proc:"Continuar con procesos →",
-    btn_rules:"Reglas",slot_label:"Ranura",slot_empty:"vacío",slot_click:"clic para colocar",
-    all_assigned:"Todos los pacientes asignados",unassigned_hint:"Pacientes sin asignar — clic para seleccionar",
-    score_prefix:"Puntuación:",attempt_label:"intento",
-    all_sel_correct:"Todas las posiciones correctas.",all_proc_correct:"Todos los procesos correctos.",all_dest_correct:"Todos los destinos correctos.",
-    select_dest:"seleccionar destino...",proc_col:"Procesos (clic para alternar)",patient_col:"Paciente",dest_col:"Destino",
-    timed_badge:"⏱ Fase cronometrada",loading:"Cargando pacientes...",
-    err_slot:"ranura",err_expected:"esperado",err_placed:"obtenido",err_missing:"Falta",err_extra:"Quitar",
-    rules_title:"Reglas de Triaje",close:"Cerrar",group_word:"Grupo",
-  }
-};
-const T = _T[LANG] || _T.en;
-function tCond(c){return T.cond[c]||c;}
-function tRisk(r){return T.risk[r]||r;}
-function tAlert(a){return T.alert[a]||a;}
-function tOnset(o){return T.onset[o]||o;}
-function tMob(m){return T.mob[m]||m;}
-function tComp(c){return T.comp[c]||c;}
-function tProc(p){return T.proc_display[p]||p;}
-function tDest(d){return T.dest_display[d]||d;}
-
 const COND_COLORS={Cardiac:'#E24B4A',Pulmonary:'#378ADD',Neurological:'#7F77DD',Trauma:'#BA7517',Infectious:'#1D9E75'};
 const PROCESSES=["Rapid Response","Stretcher","Companion Bay","Interpreter"];
 const DESTINATIONS=["Surgical Bay","Risk Ward","Monitored Ward","General Ward"];
@@ -459,7 +391,7 @@ function renderPhaseProgress(){
   const phaseMap={selection:0,processes:1,destinations:2,'proc-feedback':0,'dest-feedback':1,'final-feedback':2};
   const cur=phaseMap[STATE.phase]??0;
   document.getElementById('phase-progress').innerHTML=
-    `<span style="font-size:11px;color:#888">${T.group_word} ${STATE.groupIndex+1}/${STATE.totalGroups}</span>`+
+    `<span style="font-size:11px;color:#888">Group ${STATE.groupIndex+1}/${STATE.totalGroups}</span>`+
     phases.map((p,i)=>`<div class="step-dot ${i<cur?'done':i===cur?'active':''}" title="${p}"></div>`).join('');
 }
 
@@ -498,7 +430,7 @@ function renderPatientCard(p,opts={}){
         <span class="card-pid">${p.pid}</span>
       </div>
       <div class="card-name">${p.name}</div>
-      <div style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;margin-bottom:6px;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${tCond(p.condition)}</div>
+      <div style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;margin-bottom:6px;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${p.condition}</div>
       <div class="vitals">
         ${vitalRow('hr',p.hr)}${vitalRow('bp',p.bp)}${vitalRow('spo2',p.spo2)}
         ${vitalRow('rr',p.rr)}${vitalRow('temp',p.temp)}
@@ -521,8 +453,8 @@ function renderSelection(){
   let html=`
     <div class="phase-banner">
       <div class="phase-num">1</div>
-      <div><div class="phase-title">${T.phase1_title}</div>
-      <div class="phase-hint">${T.phase1_hint}</div></div>
+      <div><div class="phase-title">Selection order</div>
+      <div class="phase-hint">Click a patient card, then click a slot number to assign it. Click an occupied slot to clear.</div></div>
     </div>
     <div class="slots-grid">`;
 
@@ -530,13 +462,13 @@ function renderSelection(){
     const pid=STATE.selection[s];
     const p=pid?STATE.patients.find(x=>x.pid===pid):null;
     html+=`<div class="slot ${pid?'occupied':''}" onclick="handleSlotClick(${s})">
-      <div class="slot-num">${T.slot_label} ${s}</div>`;
+      <div class="slot-num">Slot ${s}</div>`;
     if(p){
       const mini=`<div style="font-size:10px;font-weight:500;color:#1a1a1a;text-align:center">${p.pid}<br>${p.name.split(',')[0]}</div>
-        <span class="risk-tag risk-${p.risk}" style="margin-top:4px">${tRisk(p.risk)}</span>`;
+        <span class="risk-tag risk-${p.risk}" style="margin-top:4px">${p.risk}</span>`;
       html+=mini;
     } else {
-      html+=`<span class="slot-label">${STATE.selectedCard?T.slot_click:T.slot_empty}</span>`;
+      html+=`<span class="slot-label">${STATE.selectedCard?'click to place':'empty'}</span>`;
     }
     html+=`</div>`;
   }
@@ -606,7 +538,7 @@ function renderSelectionFeedback(data,placed){
     errHtml='<div style="margin-top:12px">';
     data.errors.forEach(e=>{
       errHtml+=`<div class="error-item">
-        <strong>${T.slot_label} ${e.slot}:</strong> placed <em>${e.placed||'empty'}</em> — ${T.err_expected} <em>${e.expected} ${e.expected_name}</em>
+        <strong>Slot ${e.slot}:</strong> placed <em>${e.placed||'empty'}</em> — expected <em>${e.expected} ${e.expected_name}</em>
         <div class="error-expl">${e.explanation}</div>
       </div>`;
     });
@@ -623,10 +555,10 @@ function renderSelectionFeedback(data,placed){
   document.getElementById('main-content').innerHTML=`
     <div class="phase-banner">
       <div class="phase-num">1</div>
-      <div><div class="phase-title">${T.phase1_title} — ${T.attempt_label} ${data.attempt}</div></div>
+      <div><div class="phase-title">Selection — attempt ${data.attempt}</div></div>
     </div>
     <div class="feedback-box">
-      <h3>${T.score_prefix} <span class="${scoreClass} score-line">${data.score}/5</span></h3>
+      <h3>Score: <span class="${scoreClass} score-line">${data.score}/5</span></h3>
       ${errHtml}
     </div>
     <div class="patients-grid">
@@ -668,13 +600,13 @@ function renderProcesses(){
           ${riskTag(p.risk)}
         </div>
         <div class="patient-mini">${vitalMini(p)}</div>
-        <div style="font-size:11px;color:#aaa;margin-top:2px">${p.alertness} · ${p.onset} · ${p.mobility==='Non-Ambulatory'?'Non-Amb':'Ambulatory'} · ${tComp(p.companion)} · ${tCoop(p.cooperation)}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px">${p.alertness} · ${p.onset} · ${p.mobility==='Non-Ambulatory'?'Non-Amb':'Ambulatory'} · ${p.companion} · ${p.cooperation}</div>
       </td>
       <td>
         <div class="proc-checks" id="procs-${pid}">
           ${PROCESSES.map(proc=>{
             const active=curProcs.includes(proc);
-            return`<span class="proc-check ${active?'active':''}" data-pid="${pid}" data-proc="${proc}">${tProc(proc)}</span>`;
+            return`<span class="proc-check ${active?'active':''}" data-pid="${pid}" data-proc="${proc}">${proc}</span>`;
           }).join('')}
         </div>
       </td>
@@ -684,11 +616,11 @@ function renderProcesses(){
   document.getElementById('main-content').innerHTML=`
     <div class="phase-banner">
       <div class="phase-num">2</div>
-      <div><div class="phase-title">${T.phase2_title}</div>
-      <div class="phase-hint">${T.phase2_hint}</div></div>
+      <div><div class="phase-title">Additional processes</div>
+      <div class="phase-hint">Click to toggle which additional processes apply to each patient.</div></div>
     </div>
     <table class="proc-table">
-      <thead><tr><th>${T.patient_col}</th><th>${T.proc_col}</th></tr></thead>
+      <thead><tr><th>Patient</th><th>Processes (click to toggle)</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div class="btn-row">
@@ -734,9 +666,9 @@ function renderProcessFeedback(data){
       const got=e.placed.length?e.placed.join(', '):'none';
       const exp=e.expected.length?e.expected.join(', '):'none';
       errHtml+=`<div class="error-item">
-        <strong>${e.pid} ${e.name}:</strong> expected <em>${exp}</em>, ${T.err_placed} <em>${got}</em>
-        ${e.missing.length?`<br><span style="color:#A32D2D">${T.err_missing}: ${e.missing.join(', ')}</span>`:''}
-        ${e.extra.length?`<br><span style="color:#854F0B">${T.err_extra}: ${e.extra.join(', ')}</span>`:''}
+        <strong>${e.pid} ${e.name}:</strong> expected <em>${exp}</em>, got <em>${got}</em>
+        ${e.missing.length?`<br><span style="color:#A32D2D">Missing: ${e.missing.join(', ')}</span>`:''}
+        ${e.extra.length?`<br><span style="color:#854F0B">Remove: ${e.extra.join(', ')}</span>`:''}
         <div class="error-expl">${e.explanation}</div>
       </div>`;
     });
@@ -753,10 +685,10 @@ function renderProcessFeedback(data){
   document.getElementById('main-content').innerHTML=`
     <div class="phase-banner">
       <div class="phase-num">2</div>
-      <div><div class="phase-title">${T.phase2_title} — ${T.attempt_label} ${data.attempt}</div></div>
+      <div><div class="phase-title">Processes — attempt ${data.attempt}</div></div>
     </div>
     <div class="feedback-box">
-      <h3>${T.score_prefix} <span class="${scoreClass} score-line">${data.score}/5</span></h3>
+      <h3>Score: <span class="${scoreClass} score-line">${data.score}/5</span></h3>
       ${errHtml}
     </div>
     <div class="btn-row">${btnHtml}</div>`;
@@ -772,7 +704,7 @@ function renderDestinations(){
   orderedPids.forEach(pid=>{
     const p=STATE.patients.find(x=>x.pid===pid);
     const cur=STATE.destinations[pid]||'';
-    const opts=DESTINATIONS.map(d=>`<option value="${d}" ${cur===d?'selected':''}>${tDest(d)}</option>`).join('');
+    const opts=DESTINATIONS.map(d=>`<option value="${d}" ${cur===d?'selected':''}>${d}</option>`).join('');
     rows+=`<tr>
       <td style="min-width:220px">
         <div style="margin-bottom:4px">
@@ -788,7 +720,7 @@ function renderDestinations(){
       </td>
       <td>
         <select onchange="setDest('${pid}',this.value)">
-          <option value="">${T.select_dest}</option>${opts}
+          <option value="">select destination...</option>${opts}
         </select>
       </td>
     </tr>`;
@@ -797,11 +729,11 @@ function renderDestinations(){
   document.getElementById('main-content').innerHTML=`
     <div class="phase-banner">
       <div class="phase-num">3</div>
-      <div><div class="phase-title">${T.phase3_title}</div>
-      <div class="phase-hint">${T.phase3_hint}</div></div>
+      <div><div class="phase-title">Destinations</div>
+      <div class="phase-hint">Assign each patient to the correct hospital destination.</div></div>
     </div>
     <table class="dest-table">
-      <thead><tr><th>${T.patient_col}</th><th>${T.dest_col}</th></tr></thead>
+      <thead><tr><th>Patient</th><th>Destination</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div class="btn-row">
@@ -847,10 +779,10 @@ function renderDestFeedback(data){
   document.getElementById('main-content').innerHTML=`
     <div class="phase-banner">
       <div class="phase-num">3</div>
-      <div><div class="phase-title">${T.phase3_title} — ${T.attempt_label} ${data.attempt}</div></div>
+      <div><div class="phase-title">Destinations — attempt ${data.attempt}</div></div>
     </div>
     <div class="feedback-box">
-      <h3>${T.score_prefix} <span class="${scoreClass} score-line">${data.score}/5</span></h3>
+      <h3>Score: <span class="${scoreClass} score-line">${data.score}/5</span></h3>
       ${errHtml}
     </div>
     <div class="btn-row">

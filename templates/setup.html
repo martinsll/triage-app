@@ -12,28 +12,50 @@
   .sub{font-size:13px;color:#888;margin-bottom:32px;line-height:1.5}
   .field{margin-bottom:24px}
   label{display:block;font-size:12px;font-weight:500;color:#555;margin-bottom:6px;letter-spacing:0.3px;text-transform:uppercase}
-  input[type=text]{width:100%;padding:12px 14px;border:0.5px solid #d0cdc5;border-radius:8px;font-size:15px;outline:none;transition:border-color 0.15s}
-  input[type=text]:focus{border-color:#378ADD}
-  input[type=text]::placeholder{color:#bbb}
+
+  /* ID display box */
+  .id-box{background:#f5f4f0;border-radius:10px;border:0.5px solid #e0ddd5;padding:16px 20px;margin-bottom:28px}
+  .id-label{font-size:12px;color:#888;margin-bottom:6px}
+  .id-value{font-size:28px;font-weight:500;color:#1a1a1a;letter-spacing:1px}
+  .id-note{font-size:12px;color:#aaa;margin-top:6px;line-height:1.5}
+  .id-loading{font-size:16px;color:#aaa}
+
+  /* Language pills */
+  .pills{display:flex;gap:8px}
+  .pill{padding:7px 18px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:13px;cursor:pointer;transition:all 0.12s;color:#555}
+  .pill.active{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+  .pill:hover:not(.active){border-color:#888}
+
   .start-btn{width:100%;padding:14px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;font-weight:500;cursor:pointer;transition:opacity 0.15s;margin-top:4px}
   .start-btn:hover{opacity:0.85}
+  .start-btn:disabled{opacity:0.4;cursor:not-allowed}
   .admin-link{text-align:center;font-size:12px;color:#aaa;margin-top:20px}
   .admin-link a{color:#888;text-decoration:none}
   .admin-link a:hover{text-decoration:underline}
-  .err{border-color:#E24B4A !important}
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>Triage Training</h1>
-  <p class="sub">Enter your name to begin the experiment.</p>
+  <h1 id="title">Triage Training</h1>
+  <p class="sub" id="subtitle">You have been assigned the following participant ID. Please write it down before continuing.</p>
 
-  <div class="field">
-    <label>Name</label>
-    <input type="text" id="pid" placeholder="e.g. Maria Garcia" autocomplete="off"/>
+  <!-- Assigned ID -->
+  <div class="id-box">
+    <div class="id-label" id="id-label">Your participant ID</div>
+    <div class="id-value" id="id-display"><span class="id-loading">Loading...</span></div>
+    <div class="id-note" id="id-note">Please note this ID. You may need it to recover your session.</div>
   </div>
 
-  <button class="start-btn" onclick="startSession()">Start →</button>
+  <!-- Language selection -->
+  <div class="field">
+    <label id="lang-label">Language / Idioma</label>
+    <div class="pills" id="lang-pills">
+      <div class="pill active" data-val="en">English</div>
+      <div class="pill" data-val="es">Español</div>
+    </div>
+  </div>
+
+  <button class="start-btn" id="start-btn" onclick="startSession()" disabled>Start →</button>
 
   <div class="admin-link">
     <a href="/admin">Experimenter view ↗</a>
@@ -41,26 +63,76 @@
 </div>
 
 <script>
-document.getElementById('pid').addEventListener('keydown', e => {
-  if(e.key === 'Enter') startSession();
+let assignedId = null;
+
+// Translations for the setup page itself
+const labels = {
+  en: {
+    title: "Triage Training",
+    subtitle: "You have been assigned the following participant ID. Please write it down before continuing.",
+    id_label: "Your participant ID",
+    id_note: "Please note this ID. You may need it to recover your session.",
+    start: "Start →"
+  },
+  es: {
+    title: "Entrenamiento de Triaje",
+    subtitle: "Se le ha asignado el siguiente ID de participante. Anótelo antes de continuar.",
+    id_label: "Su ID de participante",
+    id_note: "Por favor anote este ID. Podría necesitarlo para recuperar su sesión.",
+    start: "Comenzar →"
+  }
+};
+
+function getLang(){
+  return document.querySelector('#lang-pills .pill.active')?.dataset.val || 'en';
+}
+
+function updateLabels(){
+  const lang = getLang();
+  const L = labels[lang];
+  document.getElementById('title').textContent = L.title;
+  document.getElementById('subtitle').textContent = L.subtitle;
+  document.getElementById('id-label').textContent = L.id_label;
+  document.getElementById('id-note').textContent = L.id_note;
+  document.getElementById('start-btn').textContent = L.start;
+}
+
+document.querySelectorAll('#lang-pills .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#lang-pills .pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    updateLabels();
+  });
 });
 
-async function startSession(){
-  const pid = document.getElementById('pid').value.trim();
-  if(!pid){
-    document.getElementById('pid').classList.add('err');
-    document.getElementById('pid').focus();
-    return;
+// Fetch assigned ID on load
+async function fetchId(){
+  try {
+    const res = await fetch('/api/next_participant_id');
+    const data = await res.json();
+    assignedId = data.id;
+    document.getElementById('id-display').textContent = assignedId;
+    document.getElementById('start-btn').disabled = false;
+  } catch(e) {
+    document.getElementById('id-display').textContent = '—';
   }
-  document.getElementById('pid').classList.remove('err');
+}
+
+async function startSession(){
+  if(!assignedId) return;
+  const btn = document.getElementById('start-btn');
+  btn.disabled = true;
   const res = await fetch('/api/start', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({participant_id: pid, language: 'en'})
+    body: JSON.stringify({participant_id: assignedId, language: getLang()})
   });
   const data = await res.json();
   if(data.ok) window.location.href = data.redirect;
+  else btn.disabled = false;
 }
+
+fetchId();
 </script>
 </body>
 </html>

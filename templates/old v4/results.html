@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="{{ language }}">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Triage Training — {% if language == 'es' %}Resultados{% else %}Results{% endif %}</title>
+<title>Triage Training — Results</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:24px}
@@ -29,13 +29,8 @@ h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
 </head>
 <body>
 <div class="wrap">
-  {% if language == 'es' %}
-  <h1>Sesión completada</h1>
-  <p class="sub">Participante: {{ sess.participant_id }} · Set {{ sess.set }} · {{ sess.created_at[:10] }}</p>
-  {% else %}
   <h1>Session complete</h1>
   <p class="sub">Participant: {{ sess.participant_id }} · Set {{ sess.set }} · {{ sess.created_at[:10] }}</p>
-  {% endif %}
 
   {% set total_sel = 0 %}{% set total_proc = 0 %}{% set total_dest = 0 %}
   {% for grp_key, it in sess.iterations.items() %}
@@ -52,15 +47,15 @@ h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
 
   <div class="scores-grid">
     <div class="score-card">
-      <div class="score-label">{% if language == 'es' %}Selección{% else %}Selection{% endif %}</div>
+      <div class="score-label">Selection</div>
       <div class="score-val {{ 'ok' if total_sel == max_each else 'warn' if total_sel >= max_each*0.6 else 'bad' }}">{{ total_sel }}/{{ max_each }}</div>
     </div>
     <div class="score-card">
-      <div class="score-label">{% if language == 'es' %}Procesos{% else %}Processes{% endif %}</div>
+      <div class="score-label">Processes</div>
       <div class="score-val {{ 'ok' if total_proc == max_each else 'warn' if total_proc >= max_each*0.6 else 'bad' }}">{{ total_proc }}/{{ max_each }}</div>
     </div>
     <div class="score-card">
-      <div class="score-label">{% if language == 'es' %}Destinos{% else %}Destinations{% endif %}</div>
+      <div class="score-label">Destinations</div>
       <div class="score-val {{ 'ok' if total_dest == max_each else 'warn' if total_dest >= max_each*0.6 else 'bad' }}">{{ total_dest }}/{{ max_each }}</div>
     </div>
     <div class="score-card" style="border-color:#378ADD">
@@ -71,16 +66,11 @@ h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
 
   {% for grp_key, it in sess.iterations.items()|sort %}
   <div class="group-block">
-    <div class="group-title">{% if language == 'es' %}Grupo{% else %}Group{% endif %} {{ it.group }}</div>
-    {% if language == 'es' %}
-      {% set phase_labels = [('Selección', it.selection), ('Procesos', it.processes), ('Destinos', it.destinations)] %}
-    {% else %}
-      {% set phase_labels = [('Selection', it.selection), ('Processes', it.processes), ('Destinations', it.destinations)] %}
-    {% endif %}
-    {% for phase_name, phase_data in phase_labels %}
+    <div class="group-title">Group {{ it.group }}</div>
+    {% for phase_name, phase_data in [('Selection', it.selection), ('Processes', it.processes), ('Destinations', it.destinations)] %}
     <div class="phase-row">
       <span class="phase-name">{{ phase_name }}</span>
-      <span class="attempts">{{ phase_data.attempts|length }} {% if language == 'es' %}intento(s){% else %}attempt(s){% endif %}</span>
+      <span class="attempts">{{ phase_data.attempts|length }} attempt(s)</span>
       {% set fs = phase_data.final_score or (phase_data.attempts[-1].score if phase_data.attempts else '—') %}
       <span class="{{ 'ok' if fs == '5/5' else 'warn' if fs.startswith('3') or fs.startswith('4') else 'bad' }}">{{ fs }}</span>
     </div>
@@ -89,8 +79,8 @@ h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
   {% endfor %}
 
   <div class="btn-row">
-    <a href="/"><button class="btn btn-primary">{% if language == 'es' %}Nueva sesión{% else %}New session{% endif %}</button></a>
-    <a href="/admin"><button class="btn">{% if language == 'es' %}Vista del experimentador{% else %}Experimenter view{% endif %}</button></a>
+    <a href="/"><button class="btn btn-primary">New session</button></a>
+    <a href="/admin"><button class="btn">Experimenter view</button></a>
   </div>
 </div>
 </body>

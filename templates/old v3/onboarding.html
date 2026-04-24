@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triage Training — Introduction</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:32px 24px}
+.wrap{max-width:740px;margin:0 auto}
+
+/* Progress bar */
+.progress-bar{display:flex;align-items:center;gap:12px;margin-bottom:40px}
+.step{display:flex;align-items:center;gap:8px;font-size:13px;color:#aaa}
+.step.active{color:#1a1a1a;font-weight:500}
+.step.done{color:#3B6D11}
+.step-num{width:24px;height:24px;border-radius:50%;border:1.5px solid #d0cdc5;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.step.active .step-num{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+.step.done .step-num{background:#3B6D11;border-color:#3B6D11;color:#fff}
+.step-divider{flex:1;height:1px;background:#e0ddd5}
+
+/* Content card */
+.card{background:#fff;border-radius:16px;border:0.5px solid #e0ddd5;padding:40px;margin-bottom:24px}
+h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:8px}
+h2{font-size:16px;font-weight:500;color:#1a1a1a;margin:24px 0 10px}
+h3{font-size:13px;font-weight:500;color:#555;margin:16px 0 6px;text-transform:uppercase;letter-spacing:0.3px}
+.lead{font-size:15px;color:#444;line-height:1.7;margin-bottom:20px}
+p{font-size:14px;color:#444;line-height:1.7;margin-bottom:12px}
+p:last-child{margin-bottom:0}
+
+/* Phase boxes */
+.phases{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+.phase-box{background:#f9f8f6;border-radius:10px;border:0.5px solid #e0ddd5;padding:16px}
+.phase-num{width:28px;height:28px;border-radius:50%;background:#1a1a1a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;margin-bottom:10px}
+.phase-title{font-size:13px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
+.phase-desc{font-size:12px;color:#666;line-height:1.5}
+
+/* Rules tables */
+table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:13px}
+th{background:#f5f4f0;padding:8px 12px;text-align:left;border:0.5px solid #e0ddd5;font-weight:500;color:#555}
+td{padding:7px 12px;border:0.5px solid #e0ddd5;vertical-align:top;line-height:1.5}
+tr:nth-child(even) td{background:#f9f8f6}
+.crit{color:#A32D2D;font-weight:500}
+.mod{color:#854F0B;font-weight:500}
+.stab{color:#3B6D11;font-weight:500}
+.tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:500}
+.tag-crit{background:#FCEBEB;color:#A32D2D}
+.tag-mod{background:#FAEEDA;color:#854F0B}
+.tag-stab{background:#EAF3DE;color:#3B6D11}
+
+/* Note box */
+.note{background:#E6F1FB;border-left:3px solid #378ADD;border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;font-size:13px;color:#185FA5;line-height:1.6}
+
+/* Footer */
+.footer{display:flex;align-items:center;justify-content:space-between;padding-top:8px}
+.reading-hint{font-size:12px;color:#aaa}
+.next-btn{padding:10px 28px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:14px;font-weight:500;cursor:pointer;transition:opacity 0.15s;display:flex;align-items:center;gap:8px}
+.next-btn:disabled{background:#ccc;cursor:not-allowed}
+.next-btn:hover:not(:disabled){opacity:0.85}
+.countdown{font-size:12px;color:#aaa;display:inline-block;min-width:80px;text-align:right}
+
+/* Hidden */
+.page{display:none}.page.active{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Progress indicator -->
+  <div class="progress-bar">
+    <div class="step done" id="step-config">
+      <div class="step-num">✓</div>
+      <span>Configuration</span>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step active" id="step-instructions">
+      <div class="step-num">2</div>
+      <span>Instructions</span>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step" id="step-rules">
+      <div class="step-num">3</div>
+      <span>Rules</span>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step" id="step-game">
+      <div class="step-num">4</div>
+      <span>Game</span>
+    </div>
+  </div>
+
+  <!-- PAGE 1: Instructions -->
+  <div class="page active" id="page-instructions">
+    <div class="card">
+      <h1>Welcome to the Triage Training</h1>
+      <p class="lead">In this exercise you will triage groups of simulated patients. You will make three types of decisions for each group of five patients.</p>
+
+      <div class="phases">
+        <div class="phase-box">
+          <div class="phase-num">1</div>
+          <div class="phase-title">Selection order</div>
+          <div class="phase-desc">Rank the five patients in the order they should be seen, from most to least urgent.</div>
+        </div>
+        <div class="phase-box">
+          <div class="phase-num">2</div>
+          <div class="phase-title">Additional processes</div>
+          <div class="phase-desc">For each patient, identify which additional processes are required — such as calling a rapid response or requesting a stretcher.</div>
+        </div>
+        <div class="phase-box">
+          <div class="phase-num">3</div>
+          <div class="phase-title">Destinations</div>
+          <div class="phase-desc">Assign each patient to the correct hospital destination — for example Risk Ward, Monitored Ward, or Surgical Bay.</div>
+        </div>
+      </div>
+
+      <h2>How the game works</h2>
+      <p>Each patient card shows a set of clinical values: heart rate, blood pressure, oxygen saturation, respiratory rate, temperature, alertness, onset, mobility, and social context.</p>
+      <p>You will use these values together with the triage rules (explained on the next page) to make your decisions. After you submit your answers, the game will tell you what was correct and what was not.</p>
+      <p>You can retry each phase as many times as needed. You must complete all three phases for each group before moving on.</p>
+
+      <div class="note">
+        A <strong>Rules</strong> button is always visible during the game. You can open it at any time to consult the triage rules — use it as much as you need to.
+      </div>
+
+      <h2>Patient information on each card</h2>
+      <table>
+        <thead><tr><th>Variable</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>HR</strong></td><td>Heart rate in beats per minute</td></tr>
+          <tr><td><strong>BP</strong></td><td>Blood pressure in mmHg</td></tr>
+          <tr><td><strong>SpO2</strong></td><td>Oxygen saturation as a percentage</td></tr>
+          <tr><td><strong>RR</strong></td><td>Respiratory rate per minute</td></tr>
+          <tr><td><strong>Temp</strong></td><td>Body temperature in °C</td></tr>
+          <tr><td><strong>Alertness</strong></td><td>Alert, Confused, or Lethargic</td></tr>
+          <tr><td><strong>Onset</strong></td><td>How symptoms began — Sudden, Progressive, or Recurring</td></tr>
+          <tr><td><strong>Mobility</strong></td><td>Whether the patient can walk (Ambulatory / Non-Ambulatory)</td></tr>
+          <tr><td><strong>Companion</strong></td><td>Whether someone is with the patient</td></tr>
+          <tr><td><strong>Cooperation</strong></td><td>Cooperative or Agitated</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      <span class="reading-hint">Please read carefully before continuing</span>
+      <button class="next-btn" id="next-1" onclick="goToRules()">
+        Next: Rules <span>→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PAGE 2: Rules -->
+  <div class="page" id="page-rules">
+    <div class="card">
+      <h1>Triage Rules</h1>
+      <p class="lead">These are the rules you will apply during the game. Read them carefully — you can consult them at any time during play using the <strong>Rules</strong> button.</p>
+
+      <h2>1. Vital sign thresholds</h2>
+      <p>Each vital sign falls into one of three levels. The level determines whether it contributes to a patient's risk. Note that not all vitals are relevant for every condition — only apply the rules for the patient's specific condition.</p>
+      <table>
+        <thead><tr>
+          <th>Vital</th>
+          <th class="stab">Normal</th>
+          <th class="mod">Abnormal</th>
+          <th class="crit">Critical</th>
+        </tr></thead>
+        <tbody>
+          <tr><td><strong>HR (bpm)</strong></td><td>60–100</td><td>101–130</td><td>&gt;130 or &lt;40</td></tr>
+          <tr><td><strong>BP (mmHg)</strong></td><td>90–140</td><td>&gt;140 or &lt;90</td><td>—</td></tr>
+          <tr><td><strong>SpO2 (%)</strong></td><td>≥91</td><td>81–90</td><td>&lt;80</td></tr>
+          <tr><td><strong>RR (/min)</strong></td><td>12–20</td><td>21–30</td><td>&gt;30 or &lt;10</td></tr>
+          <tr><td><strong>Temp (°C)</strong></td><td>36–38</td><td>38–39</td><td>&gt;39 or &lt;35</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:13px;color:#555;margin-top:8px"><strong>Alertness</strong> has three levels used in risk derivation: <span class="tag tag-stab">Oriented</span> (normal), <span class="tag tag-mod">Confused</span> (abnormal), <span class="tag tag-crit">Lethargic</span> (critical).</p>
+
+      <h2>2. Risk derivation</h2>
+      <p>Each patient has a risk level: <span class="tag tag-crit">Critical</span>, <span class="tag tag-mod">Moderate</span>, or <span class="tag tag-stab">Stable</span>. The risk depends on the patient's condition and vital signs. <strong>Stable</strong> means none of the Critical or Moderate criteria are met.</p>
+      <p>Some patients will have abnormal vitals that are <strong>not relevant for their condition</strong> — for example, a high temperature in a Cardiac patient. Apply only the rules for the patient's specific condition and ignore the rest.</p>
+      <p style="font-size:12px;color:#666;margin-top:6px">Each row in the tables is an AND condition. Multiple rows per condition = OR between rows.</p>
+
+      <h3 style="font-size:13px;font-weight:600;color:#A32D2D;margin:14px 0 8px">Critical risk</h3>
+      <table>
+        <thead><tr><th>Condition</th><th>HR</th><th>BP</th><th>SpO2</th><th>RR</th><th>Temp</th><th>Alertness</th><th>Mobility</th></tr></thead>
+        <tbody style="text-align:center;font-size:12px">
+          <tr><td style="text-align:left"><strong>Cardiac</strong></td><td style="background:#FEECEC">Critical</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td></td><td style="background:#FEECEC">Abnormal</td><td style="background:#FEECEC">Abnormal Low</td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td style="text-align:left"><strong>Pulmonary</strong></td><td></td><td></td><td style="background:#FEECEC">Critical</td><td></td><td></td><td></td><td></td></tr>
+          <tr><td></td><td></td><td></td><td style="background:#FEECEC">Abnormal</td><td style="background:#FEECEC">Critical</td><td></td><td></td><td></td></tr>
+          <tr><td style="text-align:left"><strong>Neurological</strong></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FEECEC">Lethargic</td><td></td></tr>
+          <tr><td style="text-align:left"><strong>Trauma</strong></td><td style="background:#FEECEC">Abnormal</td><td></td><td></td><td></td><td></td><td></td><td style="background:#FEECEC">Non-Ambulatory</td></tr>
+          <tr><td style="text-align:left"><strong>Infectious</strong></td><td style="background:#FEECEC">Abnormal</td><td></td><td></td><td></td><td style="background:#FEECEC">Critical</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+
+      <h3 style="font-size:13px;font-weight:600;color:#854F0B;margin:14px 0 8px">Moderate risk</h3>
+      <table>
+        <thead><tr><th>Condition</th><th>HR</th><th>BP</th><th>SpO2</th><th>RR</th><th>Temp</th><th>Alertness</th><th>Mobility</th></tr></thead>
+        <tbody style="text-align:center;font-size:12px">
+          <tr><td style="text-align:left"><strong>Cardiac</strong></td><td style="background:#FFF8EE">Abnormal</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td></td><td></td><td style="background:#FFF8EE">Abnormal</td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td style="text-align:left"><strong>Pulmonary</strong></td><td></td><td></td><td style="background:#FFF8EE">Abnormal</td><td></td><td></td><td></td><td></td></tr>
+          <tr><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Abnormal</td><td></td><td></td><td></td></tr>
+          <tr><td style="text-align:left"><strong>Neurological</strong></td><td></td><td style="background:#FFF8EE">Abnormal High</td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Confused</td><td></td></tr>
+          <tr><td style="text-align:left"><strong>Trauma</strong></td><td style="background:#FFF8EE">Abnormal</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Non-Ambulatory</td></tr>
+          <tr><td style="text-align:left"><strong>Infectious</strong></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Abnormal</td><td></td><td></td></tr>
+          <tr><td></td><td></td><td></td><td></td><td></td><td style="background:#FFF8EE">Critical</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+
+      <h2>3. Selection order</h2>
+      <p>Rank the five patients from most to least urgent using this three-level hierarchy. Only move to the next level when there is a tie at the current level.</p>
+      <table>
+        <thead><tr><th style="text-align:center">Priority</th><th>Level</th><th class="crit">1st</th><th class="mod">2nd</th><th class="stab">3rd</th></tr></thead>
+        <tbody>
+          <tr><td style="text-align:center"><strong>1</strong></td><td><strong>Risk level</strong></td><td class="crit">Critical</td><td class="mod">Moderate</td><td class="stab">Stable</td></tr>
+          <tr><td style="text-align:center"><strong>2</strong></td><td><strong>Onset</strong> (tiebreak)</td><td>Sudden</td><td>Progressive</td><td>Recurring</td></tr>
+          <tr><td style="text-align:center"><strong>3</strong></td><td><strong>Alertness</strong> (tiebreak)</td><td>Lethargic</td><td>Confused</td><td>Oriented</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>AND / OR example:</strong> Two patients are both Critical with Sudden onset. To break the tie, look at Alertness — the Lethargic patient goes first, the Oriented patient goes second. All three levels must be checked in order before concluding a tie.
+      </div>
+
+      <h2>4. Additional processes</h2>
+      <p>For each patient, check whether any of the four additional processes apply. Multiple processes can apply to the same patient. Check all four for every patient.</p>
+      <table>
+        <thead>
+          <tr><th></th><th style="text-align:center">Rapid Response</th><th style="text-align:center">Stretcher</th><th style="text-align:center">Companion Bay</th><th style="text-align:center">Interpreter</th></tr>
+        </thead>
+        <tbody style="text-align:center;font-size:12px">
+          <tr><td style="text-align:left"><strong>Cardiac</strong></td><td class="crit">Critical</td><td class="crit">Critical</td><td class="stab">Stable</td><td class="mod">Stable or Moderate</td></tr>
+          <tr><td style="text-align:left"><strong>Pulmonary</strong></td><td class="crit">Critical</td><td class="crit">Critical</td><td class="stab">Stable</td><td class="mod">Stable or Moderate</td></tr>
+          <tr><td style="text-align:left"><strong>Neurological</strong></td><td style="color:#ccc">—</td><td class="crit">Critical</td><td style="color:#ccc">—</td><td style="color:#ccc">—</td></tr>
+          <tr><td style="text-align:left"><strong>Trauma</strong></td><td style="color:#ccc">—</td><td class="mod">Moderate</td><td class="stab">Stable</td><td style="color:#ccc">—</td></tr>
+          <tr><td style="text-align:left"><strong>Infectious</strong></td><td style="color:#ccc">—</td><td class="crit">Critical</td><td style="color:#ccc">—</td><td class="mod">Stable or Moderate</td></tr>
+          <tr style="border-top:1px solid #e0ddd5"><td style="text-align:left;color:#888">Mobility</td><td style="color:#ccc">—</td><td style="font-size:11px">Non-Ambulatory</td><td style="color:#ccc">—</td><td style="color:#ccc">—</td></tr>
+          <tr><td style="text-align:left;color:#888">Companion</td><td style="color:#ccc">—</td><td style="color:#ccc">—</td><td style="font-size:11px">Accompanied</td><td style="font-size:11px">Unaccompanied</td></tr>
+          <tr><td style="text-align:left;color:#888">Cooperation</td><td style="color:#ccc">—</td><td style="color:#ccc">—</td><td style="color:#ccc">—</td><td style="font-size:11px">Agitated</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        All conditions in a column must be met simultaneously. A single patient can have multiple additional processes. For example, for a Cardiac Stable patient: it will have <strong>Interpreter</strong> if the patient is Agitated + Unaccompanied. It will have <strong>Companion Bay</strong> if the patient is Accompanied. Both cannot apply to the same patient since Accompanied and Unaccompanied are mutually exclusive.
+      </div>
+
+      <h2>5. Destinations</h2>
+      <p>Assign each patient to one of four destinations. Onset only matters for Cardiac and Neurological patients — for all others, risk level alone determines the destination.</p>
+      <table>
+        <thead>
+          <tr><th></th><th></th><th style="text-align:center">Surgical Bay</th><th style="text-align:center">Risk Ward</th><th style="text-align:center">Monitored Ward</th><th style="text-align:center">General Ward</th></tr>
+          <tr style="font-size:11px;color:#888"><th></th><th></th><th style="text-align:center;font-weight:400">Onset</th><th style="text-align:center;font-weight:400">Onset</th><th style="text-align:center;font-weight:400">Onset</th><th style="text-align:center;font-weight:400">Onset</th></tr>
+        </thead>
+        <tbody style="text-align:center;font-size:12px">
+          <tr><td style="text-align:left" rowspan="3"><strong>Cardiac</strong></td><td class="crit">Critical</td><td></td><td>Any</td><td></td><td></td></tr>
+          <tr><td class="mod">Moderate</td><td></td><td>Sudden</td><td>Progressive / Recurring</td><td></td></tr>
+          <tr><td class="stab">Stable</td><td></td><td></td><td>Sudden</td><td>Progressive / Recurring</td></tr>
+          <tr><td style="text-align:left" rowspan="3"><strong>Pulmonary</strong></td><td class="crit">Critical</td><td></td><td>Any</td><td></td><td></td></tr>
+          <tr><td class="mod">Moderate</td><td></td><td></td><td>Any</td><td></td></tr>
+          <tr><td class="stab">Stable</td><td></td><td></td><td></td><td>Any</td></tr>
+          <tr><td style="text-align:left" rowspan="3"><strong>Neurological</strong></td><td class="crit">Critical</td><td></td><td>Any</td><td></td><td></td></tr>
+          <tr><td class="mod">Moderate</td><td></td><td></td><td>Any</td><td></td></tr>
+          <tr><td class="stab">Stable</td><td></td><td></td><td>Sudden</td><td>Progressive / Recurring</td></tr>
+          <tr><td style="text-align:left" rowspan="3"><strong>Trauma</strong></td><td class="crit">Critical</td><td>Any</td><td></td><td></td><td></td></tr>
+          <tr><td class="mod">Moderate</td><td>Any</td><td></td><td></td><td></td></tr>
+          <tr><td class="stab">Stable</td><td></td><td></td><td></td><td>Any</td></tr>
+          <tr><td style="text-align:left" rowspan="3"><strong>Infectious</strong></td><td class="crit">Critical</td><td></td><td></td><td>Any</td><td></td></tr>
+          <tr><td class="mod">Moderate</td><td></td><td></td><td></td><td>Any</td></tr>
+          <tr><td class="stab">Stable</td><td></td><td></td><td></td><td>Any</td></tr>
+        </tbody>
+      </table>
+    </div>
+    </div>
+
+    <div class="footer">
+      <span class="reading-hint">Please read all rules before starting</span>
+      <button class="next-btn" id="next-2" onclick="startGame()">
+        Start game <span>→</span>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let page1Start = Date.now();
+let page2Start = null;
+let page1Time  = null;
+let page2Time  = null;
+
+function goToRules(){
+  page1Time = Math.round((Date.now() - page1Start) / 1000);
+  page2Start = Date.now();
+  document.getElementById('page-instructions').classList.remove('active');
+  document.getElementById('page-rules').classList.add('active');
+  document.getElementById('step-instructions').classList.remove('active');
+  document.getElementById('step-instructions').classList.add('done');
+  document.getElementById('step-instructions').querySelector('.step-num').textContent='✓';
+  document.getElementById('step-rules').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+async function startGame(){
+  page2Time = Math.round((Date.now() - page2Start) / 1000);
+  await fetch('/api/record_reading', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      instructions_time_sec: page1Time,
+      rules_time_sec: page2Time,
+    })
+  });
+  window.location.href = '/game';
+}
+</script>
+</body>
+</html>
