@@ -21,7 +21,12 @@ from design_patients import (
 
 app = Flask(__name__)
 app.secret_key = "triage-training-2024"
-
+if os.environ.get('RAILWAY_ENVIRONMENT'):
+    app.config.update(
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE='Lax',
+        SESSION_COOKIE_HTTPONLY=True,
+    )
 import sqlite3
 
 # ─── DATABASE SETUP ───────────────────────────────────────────────────────────
@@ -324,9 +329,17 @@ def validate_destinations(set_label, group, placed):
     return score, errors
 
 # ─── ROUTES ───────────────────────────────────────────────────────────────────
+
+def get_next_participant_number():
+    with get_db() as conn:
+        row = conn.execute("SELECT COUNT(*) as n FROM sessions").fetchone()
+    return row["n"] + 1
+
 @app.route("/")
 def index():
-    return render_template("setup.html")
+    n = get_next_participant_number()
+    pid = f"P{n:03d}"
+    return render_template("setup.html", participant_id=pid)
 
 @app.route("/api/start", methods=["POST"])
 def api_start():
