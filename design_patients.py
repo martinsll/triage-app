@@ -9,9 +9,9 @@ import json
 # ─── THRESHOLDS ───────────────────────────────────────────────────────────────
 HR_CRIT_HIGH=130; HR_CRIT_LOW=40; HR_MOD=101
 BP_HIGH=140; BP_LOW=90
-SPO2_CRIT=80; SPO2_MOD=90   # Normal ≥91, Abnormal 81-90, Critical <80
+SPO2_CRIT=80; SPO2_MOD=90
 RR_CRIT_HIGH=30; RR_CRIT_LOW=10; RR_MOD=21
-TEMP_CRIT=39.0; TEMP_CRIT_LOW=35.0; TEMP_MOD=38.0  # Normal 36-38, Abnormal 38-39, Critical >39
+TEMP_CRIT=39.0; TEMP_CRIT_LOW=35.0; TEMP_MOD=38.0
 
 def hr_level(v):
     if v>HR_CRIT_HIGH or v<HR_CRIT_LOW: return "Critical"
@@ -204,7 +204,7 @@ PATIENTS_A = [
 
     # GROUP 2
     {"pid":"P06","name":"Stefan M., 83M","group":2,
-     "condition":"Pulmonary","hr":96,"bp":122,"spo2":75,"rr":32,"temp":39.2,
+     "condition":"Pulmonary","hr":96,"bp":122,"spo2":88,"rr":32,"temp":39.2,
      "alertness":"Oriented","onset":"Sudden","mobility":"Non-Ambulatory",
      "companion":"Unaccompanied","cooperation":"Cooperative",
      "explanation_en":"Stefan is Pulmonary with SpO2 88% and RR 32 — both Critical. He is Alert with Sudden onset, placing him second. He needs Rapid Response and a Stretcher.",
@@ -218,14 +218,14 @@ PATIENTS_A = [
      "explanation_es":"Nora es Neurológica y Letárgica, lo que por sí solo la hace Crítica. Inicio Progresivo la coloca después de Stefan. Va a Urgencias Médicas."},
 
     {"pid":"P08","name":"Bruno S., 77M","group":2,
-     "condition":"Cardiac","hr":108,"bp":125,"spo2":85,"rr":16,"temp":36.7,
+     "condition":"Cardiac","hr":108,"bp":125,"spo2":92,"rr":16,"temp":36.7,
      "alertness":"Oriented","onset":"Progressive","mobility":"Ambulatory",
      "companion":"Accompanied","cooperation":"Cooperative",
      "explanation_en":"Bruno is Cardiac with HR 108 — Moderate. His onset is Progressive, so he goes to Monitored Ward, not Risk Ward. Cardiac Moderate with Sudden onset would go to Risk Ward, but Progressive means Monitored.",
      "explanation_es":"Bruno es Cardiaco con FC 108, Moderado. Inicio Progresivo, va a Sala Vigilada. Si fuera Súbito iría a Urgencias Médicas, pero Progresivo significa Vigilada."},
 
     {"pid":"P09","name":"Felix P., 69M","group":2,
-     "condition":"Pulmonary","hr":84,"bp":118,"spo2":86,"rr":22,"temp":38.8,
+     "condition":"Pulmonary","hr":84,"bp":118,"spo2":92,"rr":22,"temp":38.8,
      "alertness":"Oriented","onset":"Recurring","mobility":"Ambulatory",
      "companion":"Unaccompanied","cooperation":"Agitated",
      "explanation_en":"Felix is Pulmonary with SpO2 92% — Moderate. Recurring onset ranks him after Bruno. He needs Interpreter support since he is Agitated and Unaccompanied.",
@@ -247,7 +247,7 @@ PATIENTS_A = [
      "explanation_es":"Rashid es Traumático con FC 118 y No Ambulatorio, ambas condiciones juntas lo hacen Crítico. Inicio Súbito lo coloca primero. Necesita Camilla y va a Quirófano."},
 
     {"pid":"P12","name":"Amara D., 23F","group":3,
-     "condition":"Trauma","hr":88,"bp":112,"spo2":85,"rr":15,"temp":36.9,
+     "condition":"Trauma","hr":88,"bp":112,"spo2":91,"rr":15,"temp":36.9,
      "alertness":"Oriented","onset":"Progressive","mobility":"Non-Ambulatory",
      "companion":"Accompanied","cooperation":"Cooperative",
      "explanation_en":"Amara is Trauma and Non-Ambulatory with normal HR — that is Moderate, not Critical. She still needs a Stretcher because Trauma Moderate Non-Ambulatory qualifies. Progressive onset places her second.",
@@ -264,8 +264,8 @@ PATIENTS_A = [
      "condition":"Cardiac","hr":88,"bp":125,"spo2":97,"rr":15,"temp":39.0,
      "alertness":"Oriented","onset":"Progressive","mobility":"Ambulatory",
      "companion":"Unaccompanied","cooperation":"Agitated",
-     "explanation_en":"Carlos is Cardiac with normal HR and BP — Stable. Progressive onset means General Ward. He is Agitated and Unaccompanied, so he needs Interpreter support.",
-     "explanation_es":"Carlos es Cardiaco con FC y TA normales, Estable. Inicio Progresivo significa Planta General. Está Agitado y Sin Acompañante, por lo que necesita Intérprete."},
+     "explanation_en":"Carlos is Cardiac with normal HR and BP — Stable. Sudden onset means Monitored Ward. He is Agitated and Unaccompanied, so he needs Interpreter support.",
+     "explanation_es":"Carlos es Cardiaco con FC y TA normales, Estable. Inicio Súbito significa Sala Vigilada. Está Agitado y Sin Acompañante, por lo que necesita Intérprete."},
 
     {"pid":"P15","name":"Mia F., 66F","group":3,
      "condition":"Infectious","hr":82,"bp":148,"spo2":96,"rr":16,"temp":38.4,
@@ -292,7 +292,7 @@ PATIENTS_B = [
      "explanation_es":"Fatima es Pulmonar con SpO2 88%, Crítica. Alerta con inicio Súbito, segunda después de James. Necesita Respuesta Rápida y Camilla."},
 
     {"pid":"P03","name":"Luca M., 74M","group":1,
-     "condition":"Cardiac","hr":114,"bp":122,"spo2":85,"rr":16,"temp":36.8,
+     "condition":"Cardiac","hr":114,"bp":122,"spo2":91,"rr":16,"temp":36.8,
      "alertness":"Oriented","onset":"Sudden","mobility":"Ambulatory",
      "companion":"Unaccompanied","cooperation":"Agitated",
      "explanation_en":"Luca is Cardiac with HR 114 — Moderate. Sudden onset means he goes to Risk Ward. He needs Interpreter support.",
@@ -335,7 +335,7 @@ PATIENTS_B = [
      "explanation_es":"Clara es Cardiaca con TA 148, Moderada. Inicio Progresivo significa Sala Vigilada. Cardiaca Moderada con Progresivo va a Vigilada, no a Urgencias."},
 
     {"pid":"P09","name":"Oscar V., 56M","group":2,
-     "condition":"Pulmonary","hr":86,"bp":120,"spo2":85,"rr":23,"temp":39.0,
+     "condition":"Pulmonary","hr":86,"bp":120,"spo2":91,"rr":23,"temp":39.0,
      "alertness":"Oriented","onset":"Recurring","mobility":"Ambulatory",
      "companion":"Unaccompanied","cooperation":"Agitated",
      "explanation_en":"Oscar is Pulmonary with SpO2 91% — Moderate. Recurring onset places him last among Moderate patients. He needs Interpreter support.",
@@ -350,7 +350,7 @@ PATIENTS_B = [
 
     # GROUP 3
     {"pid":"P11","name":"Paulo F., 78M","group":3,
-     "condition":"Trauma","hr":122,"bp":98,"spo2":84,"rr":21,"temp":37.0,
+     "condition":"Trauma","hr":122,"bp":98,"spo2":91,"rr":21,"temp":37.0,
      "alertness":"Oriented","onset":"Sudden","mobility":"Non-Ambulatory",
      "companion":"Unaccompanied","cooperation":"Cooperative",
      "explanation_en":"Paulo is Trauma with HR 122 and Non-Ambulatory — Critical. Sudden onset places him first. He needs a Stretcher and goes to Surgical Bay.",
@@ -374,8 +374,8 @@ PATIENTS_B = [
      "condition":"Cardiac","hr":90,"bp":122,"spo2":97,"rr":8,"temp":36.7,
      "alertness":"Oriented","onset":"Progressive","mobility":"Ambulatory",
      "companion":"Unaccompanied","cooperation":"Agitated",
-     "explanation_en":"Zara is Cardiac with normal HR and BP — Stable. Progressive onset means General Ward. She is Agitated and Unaccompanied so she needs Interpreter support.",
-     "explanation_es":"Zara es Cardiaca con FC y TA normales, Estable. Inicio Progresivo significa Planta General. Agitada y Sin Acompañante, necesita Intérprete."},
+     "explanation_en":"Zara is Cardiac with normal HR and BP — Stable. Sudden onset means Monitored Ward. She is Agitated and Unaccompanied so she needs Interpreter support.",
+     "explanation_es":"Zara es Cardiaca con FC y TA normales, Estable. Inicio Súbito significa Sala Vigilada. Agitada y Sin Acompañante, necesita Intérprete."},
 
     {"pid":"P15","name":"Luis D., 57M","group":3,
      "condition":"Infectious","hr":125,"bp":115,"spo2":96,"rr":17,"temp":38.6,
