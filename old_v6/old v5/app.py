@@ -458,9 +458,6 @@ def game():
 @app.route("/api/group_patients")
 def api_group_patients():
     """Return patient data for the current group."""
-    if "session_id" not in session:
-        return jsonify({"error": "no session", "done": False}), 401
-
     set_label = session.get("set", "A")
     groups    = session.get("groups", [1, 2, 3])
     idx       = session.get("current_group_idx", 0)

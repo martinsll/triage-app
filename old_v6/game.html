@@ -379,21 +379,9 @@ function startPhaseTimer(phase){
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 async function loadGroup(){
-  try {
-    const res=await fetch('/api/group_patients');
-    if(!res.ok){
-      document.getElementById('main-content').innerHTML=
-        `<div class="loading" style="color:#E24B4A">Error loading patients (HTTP ${res.status}). Please refresh the page.</div>`;
-      console.error('group_patients failed:', res.status, await res.text());
-      return;
-    }
-    const data=await res.json();
-    if(data.done){window.location.href='/results';return;}
-    if(data.error){
-      document.getElementById('main-content').innerHTML=
-        `<div class="loading" style="color:#E24B4A">Session error: ${data.error}. Please go back and start again.</div>`;
-      return;
-    }
+  const res=await fetch('/api/group_patients');
+  const data=await res.json();
+  if(data.done){window.location.href='/results';return;}
   STATE.patients=data.patients;
   STATE.correctOrder=data.correct_order;
   STATE.group=data.group;
@@ -424,11 +412,6 @@ async function loadGroup(){
   document.getElementById('lang-badge').textContent=STATE.language.toUpperCase();
   renderPhaseProgress();
   renderSelection();
-  } catch(e) {
-    document.getElementById('main-content').innerHTML=
-      `<div class="loading" style="color:#E24B4A">Unexpected error: ${e.message}. Please refresh the page.</div>`;
-    console.error('loadGroup error:', e);
-  }
 }
 
 // ── RULES MODAL ───────────────────────────────────────────────────────────────
