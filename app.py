@@ -21,11 +21,6 @@ from design_patients import (
 
 app = Flask(__name__)
 app.secret_key = "triage-training-2024"
-app.config.update(
-    SESSION_COOKIE_SECURE=True,
-    SESSION_COOKIE_SAMESITE='Lax',
-    SESSION_COOKIE_HTTPONLY=True,
-)
 
 import sqlite3
 
@@ -48,15 +43,6 @@ def init_db():
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS counters (
-                name  TEXT PRIMARY KEY,
-                value INTEGER NOT NULL DEFAULT 0
-            )
-        """)
-        conn.execute("""
-            INSERT OR IGNORE INTO counters (name, value) VALUES ('participant_id', 0)
         """)
         conn.commit()
 
@@ -89,12 +75,6 @@ def load_all_sessions():
             "SELECT data FROM sessions ORDER BY created_at DESC"
         ).fetchall()
     return [json.loads(r["data"]) for r in rows]
-
-def get_next_participant_number():
-    """Return the next participant number based on session count."""
-    with get_db() as conn:
-        row = conn.execute("SELECT COUNT(*) as n FROM sessions").fetchone()
-    return row["n"] + 1
 
 def init_session_data(participant_id, set_label, groups, language):
     sid = f"{participant_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -346,16 +326,7 @@ def validate_destinations(set_label, group, placed):
 # ─── ROUTES ───────────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
-    n = get_next_participant_number()
-    pid = f"P{n:03d}"
-    return render_template("setup.html", participant_id=pid)
-
-@app.route("/api/next_participant_id")
-def api_next_participant_id():
-    """Return the next available participant number."""
-    n = get_next_participant_number()
-    return jsonify({"number": n, "id": f"P{n:03d}"})
-
+    return render_template("setup.html")
 
 @app.route("/api/start", methods=["POST"])
 def api_start():
@@ -404,13 +375,13 @@ def transition():
     """Interstitial screen between Train and Test phases."""
     if "session_id" not in session:
         return redirect(url_for("index"))
-    return render_template("transition.html", language=session.get("language","en"))
+    return render_template("transition.html")
 
 @app.route("/questionnaire")
 def questionnaire():
     if "session_id" not in session:
         return redirect(url_for("index"))
-    return render_template("questionnaire.html", language=session.get("language","en"))
+    return render_template("questionnaire.html")
 
 @app.route("/api/submit_questionnaire", methods=["POST"])
 def api_submit_questionnaire():
@@ -430,7 +401,7 @@ def api_submit_questionnaire():
 def onboarding():
     if "session_id" not in session:
         return redirect(url_for("index"))
-    return render_template("onboarding.html", language=session.get("language","en"))
+    return render_template("onboarding.html")
 
 @app.route("/api/record_reading", methods=["POST"])
 def api_record_reading():
@@ -458,14 +429,11 @@ def api_record_reading():
 def game():
     if "session_id" not in session:
         return redirect(url_for("index"))
-    return render_template("game.html", language=session.get("language","en"))
+    return render_template("game.html")
 
 @app.route("/api/group_patients")
 def api_group_patients():
     """Return patient data for the current group."""
-    if "session_id" not in session:
-        return jsonify({"error": "no session", "done": False}), 401
-
     set_label = session.get("set", "A")
     groups    = session.get("groups", [1, 2, 3])
     idx       = session.get("current_group_idx", 0)
@@ -643,7 +611,7 @@ def results():
     sess = load_session(sid) if sid else None
     if not sess:
         return redirect(url_for("index"))
-    return render_template("results.html", sess=sess, language=session.get("language","en"))
+    return render_template("results.html", sess=sess)
 
 @app.route("/admin")
 def admin():
