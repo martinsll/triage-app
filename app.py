@@ -21,6 +21,11 @@ from design_patients import (
 
 app = Flask(__name__)
 app.secret_key = "triage-training-2024"
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_HTTPONLY=True,
+)
 
 import sqlite3
 
