@@ -14,9 +14,12 @@ Then open: http://localhost:5000
 import os, json, sqlite3
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-from design_patients import (
-    PATIENTS_A, PATIENTS_B,
-    derive_risk, derive_processes, derive_destination, sort_key
+from rules_engine import (
+    PID_TO_PATIENT, CORRECT_ORDERS,
+    get_group_patients, patient_for_client,
+    validate_selection, validate_processes, validate_destinations,
+    correct_processes_for, correct_destination_for,
+    kendall_tau, phase_based_score,
 )
 
 app = Flask(__name__)
@@ -103,61 +106,6 @@ def init_session_data(participant_id, set_label, groups, language):
         "completed_at": None,
         "iterations": {}
     }
-
-
-def build_db():
-    pid_to_patient = {}
-    groups = {"A": {}, "B": {}}
-    for set_label, patients in [("A", PATIENTS_A), ("B", PATIENTS_B)]:
-        by_group = {}
-        for p in patients:
-            pid_to_patient[(set_label, p["pid"])] = p
-            by_group.setdefault(p["group"], []).append(p)
-        for grp, pts in by_group.items():
-            groups[set_label][grp] = [p["pid"] for p in sorted(pts, key=sort_key)]
-    return pid_to_patient, groups
-
-PID_TO_PATIENT, CORRECT_ORDERS = build_db()
-
-def correct_processes(set_label, pid):
-    p = PID_TO_PATIENT[(set_label, pid)]
-    r = derive_risk(p)
-    return derive_processes(p, r)
-
-def correct_destination(set_label, pid):
-    p = PID_TO_PATIENT[(set_label, pid)]
-    r = derive_risk(p)
-    return derive_destination(p, r)
-
-def get_group_patients(set_label, group):
-    """Return ordered patient dicts for a group."""
-    pids = CORRECT_ORDERS[set_label][group]
-    return [PID_TO_PATIENT[(set_label, pid)] for pid in pids]
-
-def patient_for_client(p, set_label, include_answers=False):
-    """Serialize patient for frontend (optionally with correct answers)."""
-    r = derive_risk(p)
-    d = {
-        "pid": p["pid"],
-        "name": p["name"],
-        "condition": p["condition"],
-        "hr": p["hr"], "bp": p["bp"], "spo2": p["spo2"],
-        "rr": p["rr"], "temp": p["temp"],
-        "alertness": p["alertness"],
-        "onset": p["onset"],
-        "mobility": p["mobility"],
-        "companion": p["companion"],
-        "cooperation": p["cooperation"],
-        "risk": r,
-        "explanation_en": p.get("explanation_en", ""),
-        "explanation_es": p.get("explanation_es", ""),
-    }
-    if include_answers:
-        d["correct_processes"] = correct_processes(set_label, p["pid"])
-        d["correct_destination"] = correct_destination(set_label, p["pid"])
-    return d
-
-# ─── PATIENT DATABASE ─────────────────────────────────────────────────────────
 def ensure_iteration(sess, group):
     key = str(group)
     if key not in sess["iterations"]:
@@ -169,174 +117,6 @@ def ensure_iteration(sess, group):
             "completed": False
         }
     return sess["iterations"][key]
-
-# ─── VALIDATION LOGIC ─────────────────────────────────────────────────────────
-def kendall_tau(placed_order, correct_order):
-    """
-    Kendall's Tau for a ranked list.
-    Returns value in [0,1] where 1 = perfect order.
-    placed_order: list of pids in participant's order (slot 1 → slot 5)
-    correct_order: list of pids in correct order
-    """
-    n = len(correct_order)
-    if n <= 1:
-        return 1.0
-    # Build rank lookup for correct order
-    correct_rank = {pid: i for i, pid in enumerate(correct_order)}
-    # Build participant rank from placed_order (only include pids in correct_order)
-    placed_rank = {}
-    for slot, pid in enumerate(placed_order):
-        if pid and pid in correct_rank:
-            placed_rank[pid] = slot
-
-    pids = [p for p in correct_order if p in placed_rank]
-    if len(pids) < 2:
-        return 0.0
-
-    concordant = discordant = 0
-    for i in range(len(pids)):
-        for j in range(i + 1, len(pids)):
-            c_diff = correct_rank[pids[i]] - correct_rank[pids[j]]
-            p_diff = placed_rank[pids[i]] - placed_rank[pids[j]]
-            if c_diff * p_diff > 0:
-                concordant += 1
-            elif c_diff * p_diff < 0:
-                discordant += 1
-
-    total_pairs = len(pids) * (len(pids) - 1) / 2
-    tau = (concordant - discordant) / total_pairs
-    # Normalise to [0,1]
-    return round((tau + 1) / 2, 4)
-
-def phase_based_score(set_label, group, placed):
-    """
-    Hierarchical scoring:
-    - 2pts: all Critical patients come before all Moderate (regardless of order within)
-    - 2pts: all Moderate patients come before all Stable
-    - 1pt per patient in correct position within their risk tier (up to 5)
-    Returns dict with breakdown.
-    """
-    from design_patients import derive_risk, PATIENTS_A, PATIENTS_B
-    patients = PATIENTS_A if set_label == "A" else PATIENTS_B
-    pid_to_risk = {}
-    for p in patients:
-        pid_to_risk[p["pid"]] = derive_risk(p)
-
-    correct = CORRECT_ORDERS[set_label][group]
-    # Build placed list (slot 1..5)
-    placed_list = [placed.get(str(i+1)) for i in range(5)]
-
-    # Group ordering check
-    crit_positions = [i for i, pid in enumerate(placed_list) if pid and pid_to_risk.get(pid)=="Critical"]
-    mod_positions  = [i for i, pid in enumerate(placed_list) if pid and pid_to_risk.get(pid)=="Moderate"]
-    stab_positions = [i for i, pid in enumerate(placed_list) if pid and pid_to_risk.get(pid)=="Stable"]
-
-    # Crits before Mods
-    crit_before_mod = (not crit_positions or not mod_positions or
-                       max(crit_positions) < min(mod_positions))
-    # Mods before Stables
-    mod_before_stab = (not mod_positions or not stab_positions or
-                       max(mod_positions) < min(stab_positions))
-
-    # Within-tier ordering
-    correct_within = 0
-    correct_risks = [pid_to_risk.get(p,"") for p in correct]
-    for risk_level in ("Critical", "Moderate", "Stable"):
-        correct_tier = [p for p in correct if pid_to_risk.get(p)==risk_level]
-        placed_tier  = [p for p in placed_list if p and pid_to_risk.get(p)==risk_level]
-        for i, pid in enumerate(correct_tier):
-            if i < len(placed_tier) and placed_tier[i] == pid:
-                correct_within += 1
-
-    tier_score     = (2 if crit_before_mod else 0) + (2 if mod_before_stab else 0)
-    within_score   = correct_within
-    total          = tier_score + within_score
-
-    return {
-        "tier_ordering_score": tier_score,
-        "tier_ordering_max":   4,
-        "within_tier_score":   within_score,
-        "within_tier_max":     5,
-        "total":               total,
-        "max":                 9,
-        "crit_before_mod":     crit_before_mod,
-        "mod_before_stab":     mod_before_stab,
-    }
-
-
-def validate_selection(set_label, group, placed):
-    correct = CORRECT_ORDERS[set_label][group]
-    errors = []
-    score = 0
-    for i, exp_pid in enumerate(correct):
-        slot = str(i + 1)
-        placed_pid = placed.get(slot)
-        if placed_pid == exp_pid:
-            score += 1
-        else:
-            errors.append({
-                "slot": i + 1,
-                "placed": placed_pid,
-                "expected": exp_pid,
-                "expected_name": PID_TO_PATIENT[(set_label, exp_pid)]["name"],
-                "explanation": PID_TO_PATIENT[(set_label, exp_pid)].get("explanation_en", "")
-            })
-    placed_list = [placed.get(str(i+1)) for i in range(5)]
-    tau   = kendall_tau(placed_list, correct)
-    phase = phase_based_score(set_label, group, placed)
-    return score, errors, correct, tau, phase
-
-def validate_processes(set_label, group, placed):
-    """
-    placed: {pid: [process_names]}
-    Returns: score, errors
-    """
-    pids = CORRECT_ORDERS[set_label][group]
-    errors = []
-    score = 0
-    for pid in pids:
-        expected = sorted(correct_processes(set_label, pid))
-        actual   = sorted(placed.get(pid, []))
-        if actual == expected:
-            score += 1
-        else:
-            missing = [p for p in expected if p not in actual]
-            extra   = [p for p in actual   if p not in expected]
-            errors.append({
-                "pid": pid,
-                "name": PID_TO_PATIENT[(set_label, pid)]["name"],
-                "expected": expected,
-                "placed": actual,
-                "missing": missing,
-                "extra": extra,
-                "explanation": PID_TO_PATIENT[(set_label, pid)].get(
-                    "explanation_en", "")
-            })
-    return score, errors
-
-def validate_destinations(set_label, group, placed):
-    """
-    placed: {pid: destination_string}
-    Returns: score, errors
-    """
-    pids = CORRECT_ORDERS[set_label][group]
-    errors = []
-    score = 0
-    for pid in pids:
-        expected = correct_destination(set_label, pid)
-        actual   = placed.get(pid, "")
-        if actual == expected:
-            score += 1
-        else:
-            errors.append({
-                "pid": pid,
-                "name": PID_TO_PATIENT[(set_label, pid)]["name"],
-                "expected": expected,
-                "placed": actual,
-                "explanation": PID_TO_PATIENT[(set_label, pid)].get(
-                    "explanation_en", "")
-            })
-    return score, errors
 
 # ─── ROUTES ───────────────────────────────────────────────────────────────────
 @app.route("/")
@@ -543,7 +323,7 @@ def api_validate():
             it["processes"]["final_score"] = "5/5"
 
         pids = CORRECT_ORDERS[set_label][group]
-        correct_all = {pid: correct_processes(set_label, pid) for pid in pids}
+        correct_all = {pid: correct_processes_for(set_label, pid) for pid in pids}
         result = {
             "score": score, "max": 5,
             "errors": errors,
@@ -568,7 +348,7 @@ def api_validate():
             it["destinations"]["final_score"] = "5/5"
 
         pids = CORRECT_ORDERS[set_label][group]
-        correct_all = {pid: correct_destination(set_label, pid) for pid in pids}
+        correct_all = {pid: correct_destination_for(set_label, pid) for pid in pids}
         result = {
             "score": score, "max": 5,
             "errors": errors,

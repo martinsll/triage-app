@@ -30,42 +30,32 @@ from enum import Enum, auto
 from dataclasses import dataclass, field, asdict
 from typing import Optional
 
-try:
-    from triage_agent import TriageAgent as LLMClient
-    LLM_AVAILABLE = True
-except ImportError:
-    LLM_AVAILABLE = False
-    print("[ENGINE] No LLM module — using fallback text.")
 
 # ─── GAME DATA ────────────────────────────────────────────────────────────────
 # Import from design_patients
-import sys
-sys.path.insert(0, '/home/claude')
-from design_patients import (
-    PATIENTS_A, PATIENTS_B,
-    derive_risk, derive_processes, derive_destination, sort_key
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from rules_engine import (
+    PID_TO_PATIENT, CORRECT_ORDERS,
+    validate_selection, validate_processes, validate_destinations,
+    correct_processes_for, correct_destination_for,
+    get_group_patients,
 )
+from design_patients import derive_risk
 
-def _build_db():
-    """Build lookup dicts from patient lists."""
-    pid_to_patient = {}   # (set, pid) → patient dict
-    aruco_to_pid   = {}   # aruco_id → (set, pid)
-    iterations     = {"A":{}, "B":{}}
-    for set_label, patients in [("A", PATIENTS_A), ("B", PATIENTS_B)]:
+# Build ArUco → PID mapping and iteration order from rules_engine data
+def _build_aruco_db():
+    aruco_to_pid = {}
+    for set_label in ("A", "B"):
         base = 10 if set_label == "A" else 40
-        groups = {}
-        for p in patients:
-            pid_idx = int(p['pid'][1:]) - 1
-            aruco_id = base + pid_idx
-            aruco_to_pid[aruco_id] = (set_label, p['pid'])
-            pid_to_patient[(set_label, p['pid'])] = p
-            groups.setdefault(p['group'], []).append(p)
-        for grp_num, grp_patients in groups.items():
-            ordered = sorted(grp_patients, key=sort_key)
-            iterations[set_label][grp_num] = [p['pid'] for p in ordered]
-    return pid_to_patient, aruco_to_pid, iterations
+        for (sl, pid) in PID_TO_PATIENT:
+            if sl == set_label:
+                pid_idx = int(pid[1:]) - 1
+                aruco_to_pid[base + pid_idx] = (set_label, pid)
+    return aruco_to_pid
 
-PID_TO_PATIENT, ARUCO_TO_PID, ITERATIONS = _build_db()
+ARUCO_TO_PID = _build_aruco_db()
+ITERATIONS   = CORRECT_ORDERS  # same structure: {set: {group: [pids]}}
 
 PROCESS_NAMES = {
     50: "Call Rapid Response",
@@ -74,15 +64,7 @@ PROCESS_NAMES = {
     53: "Request Interpreter/Support",
 }
 
-CORRECT_PROCESSES = {}
-CORRECT_DESTINATIONS = {}
-for set_label, patients in [("A", PATIENTS_A), ("B", PATIENTS_B)]:
-    CORRECT_PROCESSES[set_label] = {}
-    CORRECT_DESTINATIONS[set_label] = {}
-    for p in patients:
-        risk = derive_risk(p)
-        CORRECT_PROCESSES[set_label][p['pid']] = derive_processes(p, risk)
-        CORRECT_DESTINATIONS[set_label][p['pid']] = derive_destination(p, risk)
+# CORRECT_PROCESSES and CORRECT_DESTINATIONS now come from rules_engine
 
 # ─── PHASES ───────────────────────────────────────────────────────────────────
 class Phase(Enum):
@@ -170,14 +152,10 @@ class GameEngine:
         self._eval_triggered = False
         self._attempt_count  = 0
 
-        self.llm = None
-        if LLM_AVAILABLE and mode != "silent":
-            self.llm = LLMClient(mode=mode, language=language)
+        # No LLM — fully rules-based
 
     def set_language(self, language: str):
         self.language = language
-        if self.llm:
-            self.llm.set_language(language)
 
     # ─── PUBLIC API ───────────────────────────────────────────────────────────
     def start_iteration(self, iteration: int):
@@ -202,9 +180,7 @@ class GameEngine:
         print(f"[ENGINE] Correct order: {self.current_pids}")
 
         self.phase = Phase.INTRO
-        text = (self.llm.introduction(iteration, self.mode.value,
-                                      self.set_label)
-                if self.llm else self._fb_intro(iteration))
+        text = self._fb_intro(iteration)
         self._queue({"type":"speak", "text":text})
         self._queue({"type":"state_change", "phase":"INTRO"})
 
@@ -269,8 +245,7 @@ class GameEngine:
         # ── GUIDED: process phase ─────────────────────────────────────────
         elif self.phase == Phase.PROCESS_WAIT:
             target_pid = self.current_pids[self.current_slot - 1]
-            expected   = sorted(CORRECT_PROCESSES[self.set_label].get(
-                target_pid, []))
+            expected   = sorted(correct_processes_for(self.set_label, target_pid))
             placed     = sorted(process_state.get(target_pid, []))
 
             # Only react when process cards on this patient have changed
@@ -309,7 +284,7 @@ class GameEngine:
             print(f"[ENGINE] Validate ignored — phase: {self.phase.name}")
 
     def ask_question(self, question: str):
-        """Participant asks a question — answered by LLM with context."""
+        """Participant asks a question — answered with fixed fallback text."""
         # Log question
         if self.result:
             pl = (self.result.processes
@@ -320,18 +295,7 @@ class GameEngine:
                   else self.result.selection)
             pl.questions_asked += 1
 
-        if self.llm:
-            # Build explanation context for current group
-            context = self._build_explanation_context()
-            text = self.llm.answer_question(
-                question=question,
-                phase=self.phase.name,
-                mode=self.mode.value,
-                iteration=self.iteration,
-                explanation_context=context,
-            )
-        else:
-            text = self._fb_question_answer()
+        text = self._fb_question_answer()
 
         self._queue({"type":"speak", "text":text})
         return self._flush_actions()
@@ -354,17 +318,8 @@ class GameEngine:
         expl_key   = f"explanation_{self.language}"
         expl       = patient.get(expl_key, patient.get("explanation_en",""))
 
-        if self.llm:
-            text = self.llm.announce_slot(
-                slot_num=slot_num,
-                pid=target_pid,
-                patient_name=patient['name'],
-                explanation=expl,
-                language=self.language,
-            )
-        else:
-            text = (f"Slot {slot_num}: place {target_pid} {patient['name']}. "
-                    f"{expl}")
+        text = (f"Slot {slot_num}: place {target_pid} {patient['name']}. "
+                f"{expl}")
         self._queue({"type":"speak","text":text})
         self._queue({"type":"slot_target",
                      "slot":slot_num, "pid":target_pid})
@@ -377,19 +332,8 @@ class GameEngine:
         expl       = patient.get(expl_key, patient.get("explanation_en",""))
         placed_pt  = PID_TO_PATIENT.get((self.set_label, placed_pid), {})
 
-        if self.llm:
-            text = self.llm.correct_wrong_slot(
-                slot_num=slot_num,
-                placed_pid=placed_pid,
-                placed_name=placed_pt.get('name', placed_pid),
-                target_pid=target_pid,
-                target_name=patient['name'],
-                explanation=expl,
-                language=self.language,
-            )
-        else:
-            text = (f"Slot {slot_num} should be {target_pid} {patient['name']}, "
-                    f"not {placed_pid}. {expl}")
+        text = (f"Slot {slot_num} should be {target_pid} {patient['name']}, "
+                f"not {placed_pid}. {expl}")
         self._queue({"type":"speak","text":text})
 
     def _announce_process_slot(self, slot_num: int):
@@ -397,24 +341,15 @@ class GameEngine:
         target_pid = self.current_pids[slot_num - 1]
         patient    = PID_TO_PATIENT[(self.set_label, target_pid)]
         risk       = derive_risk(patient)
-        procs      = CORRECT_PROCESSES[self.set_label].get(target_pid, [])
+        procs      = correct_processes_for(self.set_label, target_pid)
         proc_names = [PROCESS_NAMES[p] for p in procs]
 
-        if self.llm:
-            text = self.llm.announce_process(
-                slot_num=slot_num,
-                pid=target_pid,
-                patient_name=patient['name'],
-                processes=proc_names,
-                language=self.language,
-            )
+        if proc_names:
+            text = (f"For slot {slot_num}, {target_pid} {patient['name']}: "
+                    f"attach {', '.join(proc_names)}.")
         else:
-            if proc_names:
-                text = (f"For slot {slot_num}, {target_pid} {patient['name']}: "
-                        f"attach {', '.join(proc_names)}.")
-            else:
-                text = (f"For slot {slot_num}, {target_pid} {patient['name']}: "
-                        f"no additional processes needed.")
+            text = (f"For slot {slot_num}, {target_pid} {patient['name']}: "
+                    f"no additional processes needed.")
         self._queue({"type":"speak","text":text})
         self._queue({"type":"process_target",
                      "slot":slot_num,"pid":target_pid,"processes":procs})
@@ -441,9 +376,7 @@ class GameEngine:
 
         if score == 5:
             self.result.selection.final_score = "5/5"
-            text = (self.llm.phase_correct("selection", self.iteration,
-                                           "processes")
-                    if self.llm else self._fb_correct("selection"))
+            text = self._fb_correct("selection")
             self._queue({"type":"speak","text":text})
             self._queue({"type":"log","phase":"selection",
                          "score":"5/5","attempt":self._attempt_count})
@@ -451,12 +384,7 @@ class GameEngine:
         else:
             pdata   = self._build_patient_data_dict(self.current_pids)
             context = self._build_explanation_context()
-            text    = (self.llm.selection_correction(
-                           errors, expected, pdata,
-                           attempt_num=self._attempt_count,
-                           explanation_context=context)
-                       if self.llm
-                       else self._fb_selection_correction(errors, expected))
+            text = self._fb_selection_correction(errors, expected)
             self._queue({"type":"speak","text":text})
             self._queue({"type":"log","phase":"selection",
                          "score":f"{score}/5",
@@ -467,7 +395,7 @@ class GameEngine:
         errors = []; score = 0
         for pid in self.current_pids:
             placed   = sorted(self._process_state.get(pid,[]))
-            expected = sorted(CORRECT_PROCESSES[self.set_label].get(pid,[]))
+            expected = sorted(correct_processes_for(self.set_label, pid))
             if placed == expected:
                 score += 1
             else:
@@ -483,9 +411,7 @@ class GameEngine:
 
         if score == 5:
             self.result.processes.final_score = "5/5"
-            text = (self.llm.phase_correct("processes", self.iteration,
-                                           "next_iteration")
-                    if self.llm else self._fb_correct("processes"))
+            text = self._fb_correct("processes")
             self._queue({"type":"speak","text":text})
             self._queue({"type":"log","phase":"processes",
                          "score":"5/5","attempt":self._attempt_count})
@@ -493,12 +419,7 @@ class GameEngine:
         else:
             pdata   = self._build_patient_data_dict(self.current_pids)
             context = self._build_explanation_context()
-            text    = (self.llm.process_correction(
-                           errors, pdata,
-                           attempt_num=self._attempt_count,
-                           explanation_context=context)
-                       if self.llm
-                       else self._fb_process_correction(errors))
+            text = self._fb_process_correction(errors)
             self._queue({"type":"speak","text":text})
             self._queue({"type":"log","phase":"processes",
                          "score":f"{score}/5",
@@ -511,9 +432,7 @@ class GameEngine:
         self.result.selection.attempts.append(AttemptLog(
             attempt=1, board=dict(self._board_state),
             errors=[], score="5/5"))
-        text = (self.llm.phase_correct("selection", self.iteration,
-                                       "processes")
-                if self.llm else self._fb_correct("selection"))
+        text = self._fb_correct("selection")
         self._queue({"type":"speak","text":text})
         self._queue({"type":"log","phase":"selection","score":"5/5"})
         self._transition_to_process()
@@ -526,9 +445,7 @@ class GameEngine:
             board={p: self._process_state.get(p,[])
                    for p in self.current_pids},
             errors=[], score="5/5"))
-        text = (self.llm.phase_correct("processes", self.iteration,
-                                       "next_iteration")
-                if self.llm else self._fb_correct("processes"))
+        text = self._fb_correct("processes")
         self._queue({"type":"speak","text":text})
         self._finish_iteration()
 
@@ -538,8 +455,7 @@ class GameEngine:
         self.current_slot    = 1
         self._last_slot_card = {}   # reset for process phase tracking
         self.phase = Phase.PROCESS_INTRO
-        text = (self.llm.process_intro(self.iteration)
-                if self.llm else self._fb_process_intro())
+        text = self._fb_process_intro()
         self._queue({"type":"speak","text":text})
         self._queue({"type":"state_change","phase":"PROCESS_INTRO"})
 
@@ -552,8 +468,6 @@ class GameEngine:
             self._queue({"type":"state_change","phase":"PROCESS_PLACING"})
 
     def _finish_iteration(self):
-        if self.llm and hasattr(self.llm,'end_iteration'):
-            self.llm.end_iteration(self.iteration, self.result.summary())
         self._session_log.append(self.result)
         self.phase = Phase.ITERATION_COMPLETE
         self._queue({"type":"end_iteration","summary":self.result.summary()})
@@ -561,7 +475,7 @@ class GameEngine:
 
     # ─── CONTEXT BUILDERS ─────────────────────────────────────────────────────
     def _build_explanation_context(self) -> str:
-        """All explanation texts for current group — injected into LLM."""
+        """All explanation texts for current group."""
         lines = ["Patient explanations for this group:"]
         for pid in self.current_pids:
             p = PID_TO_PATIENT[(self.set_label, pid)]
