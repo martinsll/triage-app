@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ language }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Triage Training — Questionnaire</title>
+<title>Triage Training — {% if language == 'es' %}Cuestionario{% else %}Questionnaire{% endif %}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:32px 24px}
@@ -14,14 +14,13 @@
   .question{background:#fff;border-radius:12px;border:0.5px solid #e0ddd5;padding:22px 24px;margin-bottom:14px}
   .q-num{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px}
   .q-text{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:14px;line-height:1.5}
-  .q-sub{font-size:12px;color:#888;margin-bottom:12px;margin-top:-8px}
+  .required{color:#E24B4A;margin-left:2px}
 
   /* Likert */
   .likert{display:flex;gap:8px;flex-wrap:wrap}
   .likert-opt{flex:1;min-width:52px;padding:8px 4px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:12px;text-align:center;cursor:pointer;transition:all 0.12s;color:#555;line-height:1.3}
   .likert-opt:hover{border-color:#888}
   .likert-opt.selected{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
-  .likert-labels{display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:4px;padding:0 2px}
 
   /* Multiple choice */
   .mc-opts{display:flex;flex-direction:column;gap:6px}
@@ -34,159 +33,168 @@
   textarea:focus{border-color:#378ADD}
   textarea::placeholder{color:#bbb}
 
+  .section-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin:24px 0 10px}
   .submit-btn{width:100%;padding:14px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-top:8px;transition:opacity 0.15s}
   .submit-btn:hover{opacity:0.85}
-  .section-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin:24px 0 10px}
-  .required{color:#E24B4A;margin-left:2px}
+  .err-highlight{border-color:#E24B4A !important}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="header">
+    {% if language == 'es' %}
+    <h1>Cuestionario</h1>
+    <p class="sub">Por favor responde todas las preguntas con sinceridad. No hay respuestas correctas o incorrectas. Tus respuestas son confidenciales.</p>
+    <p style="font-size:12px;color:#aaa;margin-top:6px">Parte 2 de 2</p>
+    {% else %}
     <h1>Questionnaire</h1>
     <p class="sub">Please answer all questions honestly. There are no right or wrong answers. Your responses will be kept confidential.</p>
+    <p style="font-size:12px;color:#aaa;margin-top:6px">Part 2 of 2</p>
+    {% endif %}
   </div>
 
-  <!-- SECTION 1: Task experience -->
-  <div class="section-label">Task experience</div>
+  <!-- SECTION 1 -->
+  <div class="section-label">{% if language == 'es' %}Experiencia con la tarea{% else %}Task experience{% endif %}</div>
 
   <div class="question" id="q1">
-    <div class="q-num">Question 1</div>
-    <div class="q-text">How difficult did you find the triage task overall?<span class="required">*</span></div>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 1</div>
+    <div class="q-text">
+      {% if language == 'es' %}¿Qué nivel de dificultad tuvo la tarea de triaje en general?{% else %}How difficult did you find the triage task overall?{% endif %}<span class="required">*</span>
+    </div>
     <div class="likert" data-q="q1">
-      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">Very easy</span></div>
+      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">{% if language == 'es' %}Muy fácil{% else %}Very easy{% endif %}</span></div>
       <div class="likert-opt" data-val="2">2</div>
       <div class="likert-opt" data-val="3">3</div>
       <div class="likert-opt" data-val="4">4</div>
-      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">Very hard</span></div>
+      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">{% if language == 'es' %}Muy difícil{% else %}Very hard{% endif %}</span></div>
     </div>
   </div>
 
   <div class="question" id="q2">
-    <div class="q-num">Question 2</div>
-    <div class="q-text">How confident did you feel in your triage decisions during the timed phase?<span class="required">*</span></div>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 2</div>
+    <div class="q-text">
+      {% if language == 'es' %}¿Qué nivel de confianza tuviste en tus decisiones durante la fase cronometrada?{% else %}How confident did you feel in your triage decisions during the timed phase?{% endif %}<span class="required">*</span>
+    </div>
     <div class="likert" data-q="q2">
-      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">Not at all</span></div>
+      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">{% if language == 'es' %}Nada{% else %}Not at all{% endif %}</span></div>
       <div class="likert-opt" data-val="2">2</div>
       <div class="likert-opt" data-val="3">3</div>
       <div class="likert-opt" data-val="4">4</div>
-      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">Very confident</span></div>
+      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">{% if language == 'es' %}Muy seguro{% else %}Very confident{% endif %}</span></div>
     </div>
   </div>
 
   <div class="question" id="q3">
-    <div class="q-num">Question 3</div>
-    <div class="q-text">How much did the training phase help you in the timed phase?<span class="required">*</span></div>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 3</div>
+    <div class="q-text">
+      {% if language == 'es' %}¿Cuánto te ayudó la fase de entrenamiento en la fase cronometrada?{% else %}How much did the training phase help you in the timed phase?{% endif %}<span class="required">*</span>
+    </div>
     <div class="likert" data-q="q3">
-      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">Not at all</span></div>
+      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">{% if language == 'es' %}Nada{% else %}Not at all{% endif %}</span></div>
       <div class="likert-opt" data-val="2">2</div>
       <div class="likert-opt" data-val="3">3</div>
       <div class="likert-opt" data-val="4">4</div>
-      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">A lot</span></div>
+      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">{% if language == 'es' %}Mucho{% else %}A lot{% endif %}</span></div>
     </div>
   </div>
 
   <div class="question" id="q4">
-    <div class="q-num">Question 4</div>
-    <div class="q-text">Which phase of the task did you find most challenging?<span class="required">*</span></div>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 4</div>
+    <div class="q-text">
+      {% if language == 'es' %}¿Qué fase de la tarea te resultó más difícil?{% else %}Which phase of the task did you find most challenging?{% endif %}<span class="required">*</span>
+    </div>
     <div class="mc-opts" data-q="q4">
-      <div class="mc-opt" data-val="selection">Step 1 — Selection order</div>
-      <div class="mc-opt" data-val="processes">Step 2 — Additional processes</div>
-      <div class="mc-opt" data-val="destinations">Step 3 — Destinations</div>
-      <div class="mc-opt" data-val="all_equally">All equally challenging</div>
-      <div class="mc-opt" data-val="none">None — it was straightforward</div>
+      <div class="mc-opt" data-val="selection">{% if language == 'es' %}Paso 1 — Orden de selección{% else %}Step 1 — Selection order{% endif %}</div>
+      <div class="mc-opt" data-val="processes">{% if language == 'es' %}Paso 2 — Procesos adicionales{% else %}Step 2 — Additional processes{% endif %}</div>
+      <div class="mc-opt" data-val="destinations">{% if language == 'es' %}Paso 3 — Destinos{% else %}Step 3 — Destinations{% endif %}</div>
+      <div class="mc-opt" data-val="all_equally">{% if language == 'es' %}Todos igual de difíciles{% else %}All equally challenging{% endif %}</div>
+      <div class="mc-opt" data-val="none">{% if language == 'es' %}Ninguno — fue sencillo{% else %}None — it was straightforward{% endif %}</div>
     </div>
   </div>
 
-  <!-- SECTION 2: Learning and rules -->
-  <div class="section-label">Learning and rules</div>
+  <!-- SECTION 2 -->
+  <div class="section-label">{% if language == 'es' %}Aprendizaje y reglas{% else %}Learning and rules{% endif %}</div>
 
   <div class="question" id="q5">
-    <div class="q-num">Question 5</div>
-    <div class="q-text">How clear did you find the triage rules?<span class="required">*</span></div>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 5</div>
+    <div class="q-text">
+      {% if language == 'es' %}¿Qué claridad tuvieron las reglas de triaje para ti?{% else %}How clear did you find the triage rules?{% endif %}<span class="required">*</span>
+    </div>
     <div class="likert" data-q="q5">
-      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">Very unclear</span></div>
+      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">{% if language == 'es' %}Nada claras{% else %}Very unclear{% endif %}</span></div>
       <div class="likert-opt" data-val="2">2</div>
       <div class="likert-opt" data-val="3">3</div>
       <div class="likert-opt" data-val="4">4</div>
-      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">Very clear</span></div>
+      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">{% if language == 'es' %}Muy claras{% else %}Very clear{% endif %}</span></div>
     </div>
   </div>
 
   <div class="question" id="q6">
-    <div class="q-num">Question 6</div>
-    <div class="q-text">By the end of the timed phase, how well had you learned the rules?<span class="required">*</span></div>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 6</div>
+    <div class="q-text">
+      {% if language == 'es' %}Al final de la fase cronometrada, ¿qué bien conocías las reglas?{% else %}By the end of the timed phase, how well had you learned the rules?{% endif %}<span class="required">*</span>
+    </div>
     <div class="likert" data-q="q6">
-      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">Not at all</span></div>
+      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">{% if language == 'es' %}Nada{% else %}Not at all{% endif %}</span></div>
       <div class="likert-opt" data-val="2">2</div>
       <div class="likert-opt" data-val="3">3</div>
       <div class="likert-opt" data-val="4">4</div>
-      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">Completely</span></div>
+      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">{% if language == 'es' %}Completamente{% else %}Completely{% endif %}</span></div>
     </div>
   </div>
 
-  <div class="question" id="q7">
-    <div class="q-num">Question 7</div>
-    <div class="q-text">Do you think having a robot assistant would have helped you perform the task better?<span class="required">*</span></div>
-    <div class="mc-opts" data-q="q7">
-      <div class="mc-opt" data-val="yes_definitely">Yes, definitely</div>
-      <div class="mc-opt" data-val="yes_probably">Yes, probably</div>
-      <div class="mc-opt" data-val="no_difference">No difference</div>
-      <div class="mc-opt" data-val="no_probably">No, probably not</div>
-      <div class="mc-opt" data-val="no_definitely">No, definitely not</div>
-    </div>
-  </div>
 
-  <!-- SECTION 3: Open-ended -->
-  <div class="section-label">Open-ended</div>
+  <!-- SECTION 3 -->
+  <div class="section-label">{% if language == 'es' %}Preguntas abiertas{% else %}Open-ended{% endif %}</div>
 
   <div class="question" id="q8">
-    <div class="q-num">Question 8</div>
-    <div class="q-text">What was the most difficult aspect of the task for you?</div>
-    <textarea data-q="q8" placeholder="Write your answer here..."></textarea>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 7</div>
+    <div class="q-text">{% if language == 'es' %}¿Cuál fue el aspecto más difícil de la tarea para ti?{% else %}What was the most difficult aspect of the task for you?{% endif %}</div>
+    <textarea data-q="q8" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
   </div>
 
   <div class="question" id="q9">
-    <div class="q-num">Question 9</div>
-    <div class="q-text">What would have helped you learn the triage rules more effectively?</div>
-    <textarea data-q="q9" placeholder="Write your answer here..."></textarea>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 8</div>
+    <div class="q-text">{% if language == 'es' %}¿Qué te habría ayudado a aprender las reglas de triaje de forma más efectiva?{% else %}What would have helped you learn the triage rules more effectively?{% endif %}</div>
+    <textarea data-q="q9" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
   </div>
 
   <div class="question" id="q10">
-    <div class="q-num">Question 10</div>
-    <div class="q-text">Any other comments or feedback about the experiment?</div>
-    <textarea data-q="q10" placeholder="Write your answer here..."></textarea>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 9</div>
+    <div class="q-text">{% if language == 'es' %}¿Algún otro comentario sobre el experimento?{% else %}Any other comments or feedback about the experiment?{% endif %}</div>
+    <textarea data-q="q10" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
   </div>
 
-  <button class="submit-btn" onclick="submitQuestionnaire()">Submit →</button>
+  <button class="submit-btn" onclick="submitQuestionnaire()">
+    {% if language == 'es' %}Enviar →{% else %}Submit →{% endif %}
+  </button>
 </div>
 
 <script>
 const answers = {};
 
-// Likert click handlers
 document.querySelectorAll('.likert').forEach(group => {
   group.querySelectorAll('.likert-opt').forEach(opt => {
     opt.addEventListener('click', () => {
       group.querySelectorAll('.likert-opt').forEach(o => o.classList.remove('selected'));
       opt.classList.add('selected');
       answers[group.dataset.q] = opt.dataset.val;
+      document.getElementById(group.closest('.question').id).style.borderColor = '';
     });
   });
 });
 
-// Multiple choice handlers
 document.querySelectorAll('.mc-opts').forEach(group => {
   group.querySelectorAll('.mc-opt').forEach(opt => {
     opt.addEventListener('click', () => {
       group.querySelectorAll('.mc-opt').forEach(o => o.classList.remove('selected'));
       opt.classList.add('selected');
       answers[group.dataset.q] = opt.dataset.val;
+      document.getElementById(group.closest('.question').id).style.borderColor = '';
     });
   });
 });
 
-// Text handlers
 document.querySelectorAll('textarea').forEach(ta => {
   ta.addEventListener('input', () => {
     answers[ta.dataset.q] = ta.value.trim();
@@ -194,17 +202,21 @@ document.querySelectorAll('textarea').forEach(ta => {
 });
 
 async function submitQuestionnaire(){
-  // Check required
-  const required = ['q1','q2','q3','q4','q5','q6','q7'];
-  const missing = required.filter(q => !answers[q]);
+  const required = ['q1','q2','q3','q4','q5','q6'];
+  const missing  = required.filter(q => !answers[q]);
+
   if(missing.length > 0){
     missing.forEach(q => {
-      document.getElementById(q).scrollIntoView({behavior:'smooth', block:'center'});
-      document.getElementById(q).style.borderColor = '#E24B4A';
+      const el = document.getElementById(q);
+      el.style.borderColor = '#E24B4A';
+      el.scrollIntoView({behavior:'smooth', block:'center'});
     });
-    alert('Please answer all required questions (marked with *).');
     return;
   }
+
+  const btn = document.querySelector('.submit-btn');
+  btn.disabled = true;
+  btn.textContent = '...';
 
   await fetch('/api/submit_questionnaire', {
     method: 'POST',

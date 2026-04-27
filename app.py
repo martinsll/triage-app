@@ -181,6 +181,27 @@ def transition():
         return redirect(url_for("index"))
     return render_template("transition.html", language=session.get("language","en"))
 
+@app.route("/ues_questionnaire")
+def ues_questionnaire():
+    if "session_id" not in session:
+        return redirect(url_for("index"))
+    return render_template("ues_questionnaire.html", language=session.get("language","en"))
+
+@app.route("/api/submit_ues", methods=["POST"])
+def api_submit_ues():
+    data = request.json
+    sid  = session.get("session_id")
+    sess = load_session(sid)
+    if not sess:
+        return jsonify({"ok": False}), 400
+    sess["ues_questionnaire"] = {
+        "answers":      data.get("answers", {}),
+        "order":        data.get("order", []),
+        "submitted_at": datetime.now().isoformat(),
+    }
+    save_session(sess)
+    return jsonify({"ok": True})
+
 @app.route("/questionnaire")
 def questionnaire():
     if "session_id" not in session:

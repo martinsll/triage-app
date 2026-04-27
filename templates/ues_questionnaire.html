@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triage Training — {% if language == 'es' %}Cuestionario{% else %}Questionnaire{% endif %} (1/2)</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:32px 24px}
+  .wrap{max-width:640px;margin:0 auto}
+  .header{margin-bottom:28px}
+  h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:6px}
+  .sub{font-size:14px;color:#888;line-height:1.6;margin-bottom:8px}
+  .progress{font-size:12px;color:#aaa;margin-bottom:0}
+  .question{background:#fff;border-radius:12px;border:0.5px solid #e0ddd5;padding:20px 24px;margin-bottom:12px;transition:border-color 0.2s}
+  .question.error{border-color:#E24B4A}
+  .q-num{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px}
+  .q-text{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:16px;line-height:1.5}
+  .scale{display:flex;gap:0;width:100%}
+  .scale-opt{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:8px 4px;border-radius:6px;transition:background 0.1s}
+  .scale-opt:hover{background:#f5f4f0}
+  .scale-circle{width:32px;height:32px;border-radius:50%;border:1.5px solid #d0cdc5;background:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#555;transition:all 0.12s}
+  .scale-opt.selected .scale-circle{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+  .scale-label{font-size:10px;color:#aaa;text-align:center;line-height:1.3;max-width:56px}
+  .scale-opt.selected .scale-label{color:#555}
+  .required{color:#E24B4A;margin-left:2px}
+  .submit-btn{width:100%;padding:14px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-top:8px;transition:opacity 0.15s}
+  .submit-btn:hover{opacity:0.85}
+  .submit-btn:disabled{opacity:0.4;cursor:not-allowed}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    {% if language == 'es' %}
+    <h1>Cuestionario de experiencia</h1>
+    <p class="sub">Las siguientes afirmaciones te piden que reflexiones sobre tu experiencia con este entrenamiento. Para cada afirmación, indica con qué grado estás de acuerdo usando la escala del 1 al 5.</p>
+    {% else %}
+    <h1>Experience questionnaire</h1>
+    <p class="sub">The following statements ask you to reflect on your experience with this training. For each statement, please use the scale to indicate what is most true for you.</p>
+    {% endif %}
+    <p class="progress">{% if language == 'es' %}Parte 1 de 2{% else %}Part 1 of 2{% endif %}</p>
+  </div>
+
+  <div id="questions-container"></div>
+
+  <button class="submit-btn" id="submit-btn" onclick="submitUES()">
+    {% if language == 'es' %}Siguiente →{% else %}Next →{% endif %}
+  </button>
+</div>
+
+<script>
+const LANG = "{{ language }}";
+
+// All 12 UES items — dimension stored internally, never shown to participant
+const ITEMS_EN = [
+  {id:"FA1", text:"I lost myself in this experience."},
+  {id:"FA2", text:"The time I spent using this training just slipped away."},
+  {id:"FA3", text:"I was absorbed in this experience."},
+  {id:"PU1", text:"I felt frustrated while using this training."},
+  {id:"PU2", text:"I found this training confusing to use."},
+  {id:"PU3", text:"Using this training was taxing."},
+  {id:"AE1", text:"This training was attractive."},
+  {id:"AE2", text:"This training was aesthetically appealing."},
+  {id:"AE3", text:"This training appealed to my visual senses."},
+  {id:"RW1", text:"Using this training was worthwhile."},
+  {id:"RW2", text:"My experience was rewarding."},
+  {id:"RW3", text:"I felt interested in this experience."},
+];
+
+const ITEMS_ES = [
+  {id:"FA1", text:"Me perdí en esta experiencia."},
+  {id:"FA2", text:"El tiempo que pasé con este entrenamiento se fue volando."},
+  {id:"FA3", text:"Estaba absorto/a en esta experiencia."},
+  {id:"PU1", text:"Me sentí frustrado/a usando este entrenamiento."},
+  {id:"PU2", text:"Este entrenamiento me resultó confuso de usar."},
+  {id:"PU3", text:"Usar este entrenamiento resultó agotador."},
+  {id:"AE1", text:"Este entrenamiento era atractivo."},
+  {id:"AE2", text:"Este entrenamiento era estéticamente agradable."},
+  {id:"AE3", text:"Este entrenamiento atraía mis sentidos visuales."},
+  {id:"RW1", text:"Usar este entrenamiento valió la pena."},
+  {id:"RW2", text:"Mi experiencia fue gratificante."},
+  {id:"RW3", text:"Me sentí interesado/a en esta experiencia."},
+];
+
+const SCALE_EN = ["Strongly\nDisagree","Disagree","Neither","Agree","Strongly\nAgree"];
+const SCALE_ES = ["Muy en\ndesacuerdo","En\ndesacuerdo","Ni acuerdo\nni desacuerdo","De\nacuerdo","Muy de\nacuerdo"];
+
+const items = LANG === 'es' ? ITEMS_ES : ITEMS_EN;
+const scaleLabels = LANG === 'es' ? SCALE_ES : SCALE_EN;
+
+// Shuffle items (Fisher-Yates)
+function shuffle(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+const shuffled = shuffle(items);
+const answers = {};
+
+function renderQuestions(){
+  const container = document.getElementById('questions-container');
+  container.innerHTML = shuffled.map((item, idx) => `
+    <div class="question" id="q-${item.id}">
+      <div class="q-num">${LANG==='es'?'Pregunta':'Question'} ${idx+1}<span class="required">*</span></div>
+      <div class="q-text">${item.text}</div>
+      <div class="scale" data-id="${item.id}">
+        ${[1,2,3,4,5].map(v=>`
+          <div class="scale-opt" data-val="${v}" onclick="selectVal('${item.id}',${v})">
+            <div class="scale-circle">${v}</div>
+            <div class="scale-label">${scaleLabels[v-1].replace('\\n','<br>')}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectVal(id, val){
+  answers[id] = val;
+  const scale = document.querySelector(`.scale[data-id="${id}"]`);
+  scale.querySelectorAll('.scale-opt').forEach(o => {
+    o.classList.toggle('selected', parseInt(o.dataset.val) === val);
+  });
+  document.getElementById(`q-${id}`).classList.remove('error');
+}
+
+async function submitUES(){
+  const missing = shuffled.filter(item => !answers[item.id]);
+  if(missing.length > 0){
+    missing.forEach(item => {
+      document.getElementById(`q-${item.id}`).classList.add('error');
+    });
+    document.getElementById(`q-${missing[0].id}`).scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  await fetch('/api/submit_ues', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({answers, order: shuffled.map(i=>i.id)})
+  });
+
+  window.location.href = '/questionnaire';
+}
+
+renderQuestions();
+</script>
+</body>
+</html>

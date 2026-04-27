@@ -159,7 +159,7 @@ def validate_selection(set_label: str, group: int, placed: dict):
                 "placed":        placed_pid,
                 "expected":      exp_pid,
                 "expected_name": p["name"],
-                "explanation":   p.get("explanation_en", ""),
+                "explanation":   p.get("exp_selection_en", p.get("explanation_en", "")),
             })
     placed_list = [placed.get(str(i + 1)) for i in range(5)]
     tau   = kendall_tau(placed_list, correct)
@@ -189,7 +189,7 @@ def validate_processes(set_label: str, group: int, placed: dict):
                 "placed":      actual,
                 "missing":     [x for x in expected if x not in actual],
                 "extra":       [x for x in actual   if x not in expected],
-                "explanation": p.get("explanation_en", ""),
+                "explanation": p.get("exp_processes_en", p.get("explanation_en", "")),
             })
     return score, errors
 
@@ -214,7 +214,7 @@ def validate_destinations(set_label: str, group: int, placed: dict):
                 "name":        p["name"],
                 "expected":    expected,
                 "placed":      actual,
-                "explanation": p.get("explanation_en", ""),
+                "explanation": p.get("exp_destination_en", p.get("explanation_en", "")),
             })
     return score, errors
 
