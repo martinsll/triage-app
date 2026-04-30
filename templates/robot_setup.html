@@ -3,34 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Triage Training</title>
+<title>Triage Training — Robot Session</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
   .card{background:#fff;border-radius:16px;border:0.5px solid #e0ddd5;padding:40px;max-width:420px;width:100%}
   h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
   .sub{font-size:13px;color:#888;margin-bottom:28px;line-height:1.6}
-  .field{margin-bottom:24px}
-  label{display:block;font-size:12px;font-weight:500;color:#555;margin-bottom:6px;letter-spacing:0.3px;text-transform:uppercase}
   .id-box{background:#f5f4f0;border-radius:10px;border:0.5px solid #e0ddd5;padding:16px 20px;margin-bottom:28px}
   .id-label{font-size:12px;color:#888;margin-bottom:6px}
   .id-value{font-size:32px;font-weight:500;color:#1a1a1a;letter-spacing:2px}
   .id-note{font-size:12px;color:#aaa;margin-top:6px;line-height:1.5}
-  .pills{display:flex;gap:8px;flex-wrap:wrap}
+  .field{margin-bottom:24px}
+  label{display:block;font-size:12px;font-weight:500;color:#555;margin-bottom:6px;letter-spacing:0.3px;text-transform:uppercase}
+  .pills{display:flex;gap:8px}
   .pill{padding:7px 18px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:13px;cursor:pointer;transition:all 0.12s;color:#555}
   .pill.active{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
   .pill:hover:not(.active){border-color:#888}
-  .cond-note{font-size:11px;color:#aaa;margin-top:6px}
-  .start-btn{width:100%;padding:14px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;font-weight:500;cursor:pointer;transition:opacity 0.15s;margin-top:4px}
+  .start-btn{width:100%;padding:14px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;font-weight:500;cursor:pointer;transition:opacity 0.15s}
   .start-btn:hover{opacity:0.85}
   .start-btn:disabled{opacity:0.4;cursor:not-allowed}
-  .admin-link{text-align:center;font-size:12px;color:#aaa;margin-top:20px}
-  .admin-link a{color:#888;text-decoration:none}
-  .admin-link a:hover{text-decoration:underline}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;background:#EAF3DE;color:#3B6D11;font-size:12px;font-weight:500;margin-bottom:20px;border:0.5px solid #B8DFA0}
 </style>
 </head>
 <body>
 <div class="card">
+  <div class="badge">🤖 Robot session</div>
   <h1>Triage Training</h1>
   <p class="sub">You have been assigned the following participant ID. Please write it down before continuing.</p>
 
@@ -48,20 +46,8 @@
     </div>
   </div>
 
-  <div class="field">
-    <label>Condition <span style="font-size:10px;color:#aaa;text-transform:none">(experimenter only)</span></label>
-    <div class="pills" id="cond-pills">
-      <div class="pill active" data-val="web">Web only</div>
-      <div class="pill" data-val="robot">Robot</div>
-    </div>
-    <p class="cond-note">Select "Robot" only for participants using the physical robot.</p>
-  </div>
-
-  <button class="start-btn" onclick="startSession()">Start →</button>
-
-  <div class="admin-link"><a href="/admin">Experimenter view ↗</a></div>
+  <button class="start-btn" onclick="startRobotSession()">Start →</button>
 </div>
-
 <script>
 document.querySelectorAll('#lang-pills .pill').forEach(p => {
   p.addEventListener('click', () => {
@@ -69,34 +55,21 @@ document.querySelectorAll('#lang-pills .pill').forEach(p => {
     p.classList.add('active');
   });
 });
-document.querySelectorAll('#cond-pills .pill').forEach(p => {
-  p.addEventListener('click', () => {
-    document.querySelectorAll('#cond-pills .pill').forEach(x => x.classList.remove('active'));
-    p.classList.add('active');
-  });
-});
-
 function getLang(){ return document.querySelector('#lang-pills .pill.active')?.dataset.val || 'en'; }
-function getCond(){ return document.querySelector('#cond-pills .pill.active')?.dataset.val || 'web'; }
 
-async function startSession(){
+async function startRobotSession(){
   const btn = document.querySelector('.start-btn');
   btn.disabled = true; btn.textContent = '...';
   try {
-    const res = await fetch('/api/start', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        participant_id: '{{ participant_id }}',
-        language: getLang(),
-        condition: getCond()
-      })
+    const res = await fetch('/api/start_robot', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({participant_id:'{{ participant_id }}', language:getLang()})
     });
     const data = await res.json();
-    if(data.ok){ window.location.href = data.redirect; }
-    else { btn.disabled = false; btn.textContent = 'Start →'; }
+    if(data.ok) window.location.href = data.redirect;
+    else { btn.disabled=false; btn.textContent='Start →'; }
   } catch(e) {
-    btn.disabled = false; btn.textContent = 'Error — try again';
+    btn.disabled=false; btn.textContent='Error — try again';
   }
 }
 </script>

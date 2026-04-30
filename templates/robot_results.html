@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triage Training — {% if language == 'es' %}Completado{% else %}Complete{% endif %}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:#fff;border-radius:16px;border:0.5px solid #e0ddd5;padding:48px 40px;max-width:480px;width:100%;text-align:center}
+  .check{font-size:48px;margin-bottom:20px}
+  h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:12px}
+  p{font-size:14px;color:#888;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="check">✓</div>
+  {% if language == 'es' %}
+  <h1>¡Muchas gracias!</h1>
+  <p>Has completado todas las preguntas. Puedes devolver el dispositivo al experimentador.</p>
+  {% else %}
+  <h1>Thank you!</h1>
+  <p>You have completed all the questions. You can now return the device to the experimenter.</p>
+  {% endif %}
+</div>
+</body>
+</html>

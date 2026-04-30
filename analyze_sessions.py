@@ -84,6 +84,7 @@ def build_sessions_summary(sessions):
         totals = {'selection': 0, 'processes': 0, 'destinations': 0}
         attempts_counts = {'selection': 0, 'processes': 0, 'destinations': 0}
         rule_consultations = 0
+        rule_time_ms = 0
 
         for grp_key, it in iters.items():
             for phase in ('selection', 'processes', 'destinations'):
@@ -95,6 +96,7 @@ def build_sessions_summary(sessions):
                     attempts_counts[phase] += len(att)
                     rc = last.get('rule_metrics', {})
                     rule_consultations += rc.get('total_consultations', 0) if isinstance(rc, dict) else 0
+                    rule_time_ms += rc.get('total_time_ms', 0) if isinstance(rc, dict) else 0
 
         row = {
             'participant_id':          pid,
@@ -123,6 +125,7 @@ def build_sessions_summary(sessions):
             'total_score':             sum(totals.values()),
             'total_max':               len(iters) * 15,
             'rule_consultations_test': rule_consultations,
+            'rule_time_sec_test':      round(rule_time_ms / 1000, 1),
         }
         rows.append(row)
     return rows

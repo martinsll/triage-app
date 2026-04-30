@@ -181,27 +181,6 @@ def transition():
         return redirect(url_for("index"))
     return render_template("transition.html", language=session.get("language","en"))
 
-@app.route("/ues_questionnaire")
-def ues_questionnaire():
-    if "session_id" not in session:
-        return redirect(url_for("index"))
-    return render_template("ues_questionnaire.html", language=session.get("language","en"))
-
-@app.route("/api/submit_ues", methods=["POST"])
-def api_submit_ues():
-    data = request.json
-    sid  = session.get("session_id")
-    sess = load_session(sid)
-    if not sess:
-        return jsonify({"ok": False}), 400
-    sess["ues_questionnaire"] = {
-        "answers":      data.get("answers", {}),
-        "order":        data.get("order", []),
-        "submitted_at": datetime.now().isoformat(),
-    }
-    save_session(sess)
-    return jsonify({"ok": True})
-
 @app.route("/questionnaire")
 def questionnaire():
     if "session_id" not in session:
@@ -344,7 +323,7 @@ def api_validate():
             it["processes"]["final_score"] = "5/5"
 
         pids = CORRECT_ORDERS[set_label][group]
-        correct_all = {pid: correct_processes_for(set_label, pid) for pid in pids}
+        correct_all = {pid: correct_processes(set_label, pid) for pid in pids}
         result = {
             "score": score, "max": 5,
             "errors": errors,
@@ -369,7 +348,7 @@ def api_validate():
             it["destinations"]["final_score"] = "5/5"
 
         pids = CORRECT_ORDERS[set_label][group]
-        correct_all = {pid: correct_destination_for(set_label, pid) for pid in pids}
+        correct_all = {pid: correct_destination(set_label, pid) for pid in pids}
         result = {
             "score": score, "max": 5,
             "errors": errors,
@@ -437,6 +416,76 @@ def results():
     if not sess:
         return redirect(url_for("index"))
     return render_template("results.html", sess=sess, language=session.get("language","en"))
+
+
+# ─── ROBOT QUESTIONNAIRE ROUTES ───────────────────────────────────────────────
+@app.route("/robot")
+def robot_index():
+    n = get_next_participant_number()
+    pid = f"R{n:03d}"
+    return render_template("robot_setup.html", participant_id=pid)
+
+@app.route("/api/start_robot", methods=["POST"])
+def api_start_robot():
+    data           = request.json
+    participant_id = data.get("participant_id", "").strip() or "anonymous"
+    language       = data.get("language", "en")
+
+    sess = {
+        "session_id":     f"{participant_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        "participant_id": participant_id,
+        "condition":      "robot",
+        "language":       language,
+        "created_at":     datetime.now().isoformat(),
+        "completed_at":   None,
+        "iterations":     {},
+    }
+    save_session(sess)
+
+    session["session_id"]       = sess["session_id"]
+    session["language"]         = language
+    session["condition"]         = "robot"
+    session["after_demographics"] = "/robot_ues"
+    session["after_ues"]          = "/robot_nasa_tlx"
+    session["after_nasa_tlx"]     = "/robot_questionnaire"
+
+    return jsonify({"ok": True, "redirect": "/robot_demographics"})
+
+@app.route("/robot_demographics")
+def robot_demographics():
+    if "session_id" not in session:
+        return redirect(url_for("robot_index"))
+    return render_template("demographics.html",
+        language=session.get("language","en"),
+        condition="robot")
+
+@app.route("/robot_ues")
+def robot_ues():
+    if "session_id" not in session:
+        return redirect(url_for("robot_index"))
+    return render_template("ues_questionnaire.html",
+        language=session.get("language","en"))
+
+@app.route("/robot_nasa_tlx")
+def robot_nasa_tlx():
+    if "session_id" not in session:
+        return redirect(url_for("robot_index"))
+    return render_template("nasa_tlx.html",
+        language=session.get("language","en"))
+
+@app.route("/robot_questionnaire")
+def robot_questionnaire():
+    if "session_id" not in session:
+        return redirect(url_for("robot_index"))
+    return render_template("robot_questionnaire.html",
+        language=session.get("language","en"))
+
+@app.route("/robot_results")
+def robot_results():
+    if "session_id" not in session:
+        return redirect(url_for("robot_index"))
+    return render_template("robot_results.html",
+        language=session.get("language","en"))
 
 @app.route("/admin")
 def admin():

@@ -39,7 +39,7 @@
     <h1>Experience questionnaire</h1>
     <p class="sub">The following statements ask you to reflect on your experience with this training. For each statement, please use the scale to indicate what is most true for you.</p>
     {% endif %}
-    <p class="progress">{% if language == 'es' %}Parte 1 de 2{% else %}Part 1 of 2{% endif %}</p>
+    <p class="progress">{% if language == 'es' %}Parte 1 de 3{% else %}Part 1 of 3{% endif %}</p>
   </div>
 
   <div id="questions-container"></div>
@@ -51,6 +51,7 @@
 
 <script>
 const LANG = "{{ language }}";
+const FLOW = "{{ flow|default('web') }}";
 
 // All 12 UES items — dimension stored internally, never shown to participant
 const ITEMS_EN = [
@@ -149,7 +150,7 @@ async function submitUES(){
     body: JSON.stringify({answers, order: shuffled.map(i=>i.id)})
   });
 
-  window.location.href = '/questionnaire';
+  window.location.href = FLOW === 'robot' ? '/robot/nasa_tlx' : '/nasa_tlx';
 }
 
 renderQuestions();

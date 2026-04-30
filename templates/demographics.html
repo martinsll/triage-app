@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triage Training — {% if language == 'es' %}Datos personales{% else %}Demographics{% endif %}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:32px 24px}
+  .wrap{max-width:540px;margin:0 auto}
+  h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:6px}
+  .sub{font-size:14px;color:#888;line-height:1.5;margin-bottom:32px}
+  .question{background:#fff;border-radius:12px;border:0.5px solid #e0ddd5;padding:22px 24px;margin-bottom:14px;transition:border-color 0.2s}
+  .q-label{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:12px}
+  .required{color:#E24B4A;margin-left:2px}
+  .mc-opts{display:flex;flex-direction:column;gap:6px}
+  .mc-opt{padding:10px 14px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:13px;cursor:pointer;transition:all 0.12s;color:#444}
+  .mc-opt:hover{border-color:#888}
+  .mc-opt.selected{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+  input[type=number]{width:100%;padding:10px 12px;border:0.5px solid #d0cdc5;border-radius:8px;font-size:14px;outline:none;color:#333}
+  input[type=number]:focus{border-color:#378ADD}
+  .submit-btn{width:100%;padding:14px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-top:8px;transition:opacity 0.15s}
+  .submit-btn:hover{opacity:0.85}
+  .submit-btn:disabled{opacity:0.4;cursor:not-allowed}
+</style>
+</head>
+<body>
+<div class="wrap">
+  {% if language == 'es' %}
+  <h1>Antes de empezar</h1>
+  <p class="sub">Por favor responde estas breves preguntas antes de comenzar el juego.</p>
+  {% else %}
+  <h1>Before you begin</h1>
+  <p class="sub">Please answer these brief questions before starting the game.</p>
+  {% endif %}
+
+  <div class="question" id="dq-age">
+    <div class="q-label">{% if language == 'es' %}Edad{% else %}Age{% endif %}<span class="required">*</span></div>
+    <input type="number" id="age-input" min="16" max="99"
+      placeholder="{% if language == 'es' %}Tu edad{% else %}Your age{% endif %}">
+  </div>
+
+  <div class="question" id="dq-gender">
+    <div class="q-label">{% if language == 'es' %}Género{% else %}Gender{% endif %}<span class="required">*</span></div>
+    <div class="mc-opts" data-q="gender">
+      <div class="mc-opt" data-val="female">{% if language == 'es' %}Mujer{% else %}Female{% endif %}</div>
+      <div class="mc-opt" data-val="male">{% if language == 'es' %}Hombre{% else %}Male{% endif %}</div>
+      <div class="mc-opt" data-val="non_binary">{% if language == 'es' %}No binario/a{% else %}Non-Binary{% endif %}</div>
+      <div class="mc-opt" data-val="prefer_not">{% if language == 'es' %}Prefiero no decirlo{% else %}Prefer not to say{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="question" id="dq-education">
+    <div class="q-label">{% if language == 'es' %}Nivel de estudios (finalizados o en curso){% else %}Education level (completed or ongoing){% endif %}<span class="required">*</span></div>
+    <div class="mc-opts" data-q="education">
+      <div class="mc-opt" data-val="middle_school">{% if language == 'es' %}ESO / Educación secundaria{% else %}Middle School{% endif %}</div>
+      <div class="mc-opt" data-val="high_school">{% if language == 'es' %}Bachillerato{% else %}High School{% endif %}</div>
+      <div class="mc-opt" data-val="vocational">{% if language == 'es' %}Formación profesional{% else %}Professional Training{% endif %}</div>
+      <div class="mc-opt" data-val="bachelor">{% if language == 'es' %}Grado universitario{% else %}Bachelor's Degree{% endif %}</div>
+      <div class="mc-opt" data-val="master">{% if language == 'es' %}Máster{% else %}Master's Degree{% endif %}</div>
+      <div class="mc-opt" data-val="phd">PhD</div>
+      <div class="mc-opt" data-val="no_response">{% if language == 'es' %}Sin respuesta{% else %}No response{% endif %}</div>
+    </div>
+  </div>
+
+  {% if condition == 'robot' %}
+  <div class="question" id="dq-robot">
+    <div class="q-label">{% if language == 'es' %}¿Cuántas veces has interactuado con un robot?{% else %}How many times have you interacted with a robot?{% endif %}<span class="required">*</span></div>
+    <div class="mc-opts" data-q="robot_experience">
+      <div class="mc-opt" data-val="never">{% if language == 'es' %}Nunca he interactuado con un robot{% else %}I have never interacted with a robot{% endif %}</div>
+      <div class="mc-opt" data-val="couple">{% if language == 'es' %}He interactuado con un robot un par de veces{% else %}I have interacted with a robot a couple of times{% endif %}</div>
+      <div class="mc-opt" data-val="multiple">{% if language == 'es' %}He interactuado con un robot varias veces{% else %}I have interacted with a robot multiple times{% endif %}</div>
+      <div class="mc-opt" data-val="daily">{% if language == 'es' %}Interactúo diariamente con un robot{% else %}I interact daily with a robot{% endif %}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <button class="submit-btn" id="submit-btn" onclick="submitDemographics()">
+    {% if language == 'es' %}Comenzar →{% else %}Start →{% endif %}
+  </button>
+</div>
+<script>
+const CONDITION = "{{ condition }}";
+const answers = {};
+
+document.querySelectorAll('.mc-opts').forEach(group => {
+  group.querySelectorAll('.mc-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      group.querySelectorAll('.mc-opt').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      answers[group.dataset.q] = opt.dataset.val;
+      const qid = group.dataset.q === 'robot_experience' ? 'dq-robot' :
+                  group.dataset.q === 'gender' ? 'dq-gender' : 'dq-education';
+      document.getElementById(qid).style.borderColor = '';
+    });
+  });
+});
+
+document.getElementById('age-input').addEventListener('input', function(){
+  answers['age'] = this.value;
+  document.getElementById('dq-age').style.borderColor = '';
+});
+
+async function submitDemographics(){
+  let valid = true;
+  const age = parseInt(answers['age']);
+  if(!answers['age'] || isNaN(age) || age < 16 || age > 99){
+    document.getElementById('dq-age').style.borderColor = '#E24B4A';
+    valid = false;
+  }
+  if(!answers['gender']){
+    document.getElementById('dq-gender').style.borderColor = '#E24B4A';
+    valid = false;
+  }
+  if(!answers['education']){
+    document.getElementById('dq-education').style.borderColor = '#E24B4A';
+    valid = false;
+  }
+  if(CONDITION === 'robot' && !answers['robot_experience']){
+    document.getElementById('dq-robot').style.borderColor = '#E24B4A';
+    valid = false;
+  }
+  if(!valid){
+    document.querySelector('[style*="E24B4A"]')?.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = '...';
+  await fetch('/api/submit_demographics',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({answers})
+  });
+  window.location.href = CONDITION === 'robot' ? '/robot/ues' : '/game';
+}
+</script>
+</body>
+</html>

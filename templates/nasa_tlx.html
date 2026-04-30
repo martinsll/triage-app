@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triage Training — NASA-TLX</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:32px 24px}
+  .wrap{max-width:640px;margin:0 auto}
+  h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:6px}
+  .sub{font-size:14px;color:#888;line-height:1.6;margin-bottom:6px}
+  .progress{font-size:12px;color:#aaa;margin-bottom:28px}
+  .question{background:#fff;border-radius:12px;border:0.5px solid #e0ddd5;padding:22px 24px;margin-bottom:14px;transition:border-color 0.2s}
+  .q-num{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px}
+  .q-title{font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:4px}
+  .q-def{font-size:12px;color:#888;line-height:1.5;margin-bottom:16px}
+  .required{color:#E24B4A;margin-left:2px}
+  .slider-wrap{padding:4px 0}
+  .slider-labels{display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-bottom:6px}
+  input[type=range]{width:100%;height:4px;-webkit-appearance:none;background:#e0ddd5;border-radius:2px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#1a1a1a;cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#1a1a1a;cursor:pointer;border:none}
+  .slider-val{text-align:center;font-size:18px;font-weight:500;color:#1a1a1a;margin-top:8px}
+  .slider-val span{font-size:12px;color:#aaa;font-weight:400;margin-left:4px}
+  .submit-btn{width:100%;padding:14px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-top:8px;transition:opacity 0.15s}
+  .submit-btn:hover{opacity:0.85}
+  .submit-btn:disabled{opacity:0.4;cursor:not-allowed}
+</style>
+</head>
+<body>
+<div class="wrap">
+  {% if language == 'es' %}
+  <h1>Carga de trabajo percibida</h1>
+  <p class="sub">Las siguientes preguntas evalúan la carga de trabajo que has experimentado durante la tarea. Para cada dimensión, mueve el deslizador para indicar tu valoración.</p>
+  <p class="progress">Parte 2 de 3</p>
+  {% else %}
+  <h1>Perceived workload</h1>
+  <p class="sub">The following questions assess the workload you experienced during the task. For each dimension, move the slider to indicate your rating.</p>
+  <p class="progress">Part 2 of 3</p>
+  {% endif %}
+
+  {% set items = [
+    ('mental', 'Mental Demand', 'Demanda mental',
+     'How mentally demanding was the task?',
+     '¿Cuánto esfuerzo mental requirió la tarea?',
+     'Low', 'High', 'Bajo', 'Alto'),
+    ('physical', 'Physical Demand', 'Demanda física',
+     'How physically demanding was the task?',
+     '¿Cuánto esfuerzo físico requirió la tarea?',
+     'Low', 'High', 'Bajo', 'Alto'),
+    ('temporal', 'Temporal Demand', 'Demanda temporal',
+     'How hurried or rushed was the pace of the task?',
+     '¿Cuánta prisa o presión de tiempo sentiste durante la tarea?',
+     'Low', 'High', 'Bajo', 'Alto'),
+    ('performance', 'Performance', 'Rendimiento',
+     'How successful were you in accomplishing what you were asked to do?',
+     '¿Qué tan bien crees que realizaste la tarea?',
+     'Poor', 'Good', 'Malo', 'Bueno'),
+    ('effort', 'Effort', 'Esfuerzo',
+     'How hard did you have to work to accomplish your level of performance?',
+     '¿Cuánto esfuerzo tuviste que hacer para alcanzar tu nivel de rendimiento?',
+     'Low', 'High', 'Bajo', 'Alto'),
+    ('frustration', 'Frustration', 'Frustración',
+     'How insecure, discouraged, irritated, stressed and annoyed were you?',
+     '¿Cuánta inseguridad, desánimo, irritación, estrés o molestia sentiste?',
+     'Low', 'High', 'Bajo', 'Alto'),
+  ] %}
+
+  {% for id, title_en, title_es, def_en, def_es, low_en, high_en, low_es, high_es in items %}
+  <div class="question" id="tlx-{{ id }}">
+    <div class="q-num">{% if language == 'es' %}Dimensión{% else %}Dimension{% endif %} {{ loop.index }}<span class="required">*</span></div>
+    <div class="q-title">{% if language == 'es' %}{{ title_es }}{% else %}{{ title_en }}{% endif %}</div>
+    <div class="q-def">{% if language == 'es' %}{{ def_es }}{% else %}{{ def_en }}{% endif %}</div>
+    <div class="slider-wrap">
+      <div class="slider-labels">
+        <span>{% if language == 'es' %}{{ low_es }}{% else %}{{ low_en }}{% endif %}</span>
+        <span>{% if language == 'es' %}{{ high_es }}{% else %}{{ high_en }}{% endif %}</span>
+      </div>
+      <input type="range" id="slider-{{ id }}" min="0" max="100" value="50"
+             oninput="updateVal('{{ id }}', this.value)">
+      <div class="slider-val" id="val-{{ id }}">50 <span>/ 100</span></div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <button class="submit-btn" id="submit-btn" onclick="submitNASA()">
+    {% if language == 'es' %}Siguiente →{% else %}Next →{% endif %}
+  </button>
+</div>
+<script>
+// All sliders start at 50 — initialise answers
+const FLOW = "{{ flow|default('web') }}";
+const answers = {
+  mental:50, physical:50, temporal:50,
+  performance:50, effort:50, frustration:50
+};
+
+function updateVal(id, val){
+  answers[id] = parseInt(val);
+  document.getElementById('val-' + id).innerHTML = val + ' <span>/ 100</span>';
+}
+
+async function submitNASA(){
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = '...';
+  await fetch('/api/submit_nasa_tlx', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({answers})
+  });
+  window.location.href = FLOW === 'robot' ? '/robot/questionnaire' : '/questionnaire';
+}
+</script>
+</body>
+</html>

@@ -10,33 +10,27 @@
   .wrap{max-width:640px;margin:0 auto}
   .header{margin-bottom:32px}
   h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:6px}
-  .sub{font-size:14px;color:#888;line-height:1.5}
-  .question{background:#fff;border-radius:12px;border:0.5px solid #e0ddd5;padding:22px 24px;margin-bottom:14px}
+  .sub{font-size:14px;color:#888;line-height:1.5;margin-bottom:6px}
+  .progress{font-size:12px;color:#aaa}
+  .question{background:#fff;border-radius:12px;border:0.5px solid #e0ddd5;padding:22px 24px;margin-bottom:14px;transition:border-color 0.2s}
   .q-num{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px}
   .q-text{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:14px;line-height:1.5}
   .required{color:#E24B4A;margin-left:2px}
-
-  /* Likert */
   .likert{display:flex;gap:8px;flex-wrap:wrap}
   .likert-opt{flex:1;min-width:52px;padding:8px 4px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:12px;text-align:center;cursor:pointer;transition:all 0.12s;color:#555;line-height:1.3}
   .likert-opt:hover{border-color:#888}
   .likert-opt.selected{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
-
-  /* Multiple choice */
   .mc-opts{display:flex;flex-direction:column;gap:6px}
-  .mc-opt{padding:10px 14px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:13px;cursor:pointer;transition:all 0.12s;color:#444;text-align:left}
+  .mc-opt{padding:10px 14px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:13px;cursor:pointer;transition:all 0.12s;color:#444}
   .mc-opt:hover{border-color:#888}
   .mc-opt.selected{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
-
-  /* Text */
   textarea{width:100%;padding:10px 12px;border:0.5px solid #d0cdc5;border-radius:8px;font-size:13px;font-family:inherit;outline:none;resize:vertical;min-height:80px;transition:border-color 0.15s;color:#333}
   textarea:focus{border-color:#378ADD}
   textarea::placeholder{color:#bbb}
-
   .section-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin:24px 0 10px}
   .submit-btn{width:100%;padding:14px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-top:8px;transition:opacity 0.15s}
   .submit-btn:hover{opacity:0.85}
-  .err-highlight{border-color:#E24B4A !important}
+  .submit-btn:disabled{opacity:0.4;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -44,23 +38,20 @@
   <div class="header">
     {% if language == 'es' %}
     <h1>Cuestionario</h1>
-    <p class="sub">Por favor responde todas las preguntas con sinceridad. No hay respuestas correctas o incorrectas. Tus respuestas son confidenciales.</p>
-    <p style="font-size:12px;color:#aaa;margin-top:6px">Parte 3 de 3</p>
+    <p class="sub">Por favor responde todas las preguntas con sinceridad. No hay respuestas correctas o incorrectas.</p>
+    <p class="progress">Parte 3 de 3</p>
     {% else %}
     <h1>Questionnaire</h1>
-    <p class="sub">Please answer all questions honestly. There are no right or wrong answers. Your responses will be kept confidential.</p>
-    <p style="font-size:12px;color:#aaa;margin-top:6px">Part 3 of 3</p>
+    <p class="sub">Please answer all questions honestly. There are no right or wrong answers.</p>
+    <p class="progress">Part 3 of 3</p>
     {% endif %}
   </div>
 
-  <!-- SECTION 1 -->
   <div class="section-label">{% if language == 'es' %}Experiencia con la tarea{% else %}Task experience{% endif %}</div>
 
   <div class="question" id="q1">
     <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 1</div>
-    <div class="q-text">
-      {% if language == 'es' %}¿Qué nivel de dificultad tuvo la tarea de triaje en general?{% else %}How difficult did you find the triage task overall?{% endif %}<span class="required">*</span>
-    </div>
+    <div class="q-text">{% if language == 'es' %}¿Qué nivel de dificultad tuvo la tarea de triaje en general?{% else %}How difficult did you find the triage task overall?{% endif %}<span class="required">*</span></div>
     <div class="likert" data-q="q1">
       <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">{% if language == 'es' %}Muy fácil{% else %}Very easy{% endif %}</span></div>
       <div class="likert-opt" data-val="2">2</div>
@@ -72,9 +63,7 @@
 
   <div class="question" id="q2">
     <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 2</div>
-    <div class="q-text">
-      {% if language == 'es' %}¿Qué nivel de confianza tuviste en tus decisiones durante la fase cronometrada?{% else %}How confident did you feel in your triage decisions during the timed phase?{% endif %}<span class="required">*</span>
-    </div>
+    <div class="q-text">{% if language == 'es' %}¿Qué nivel de confianza tuviste en tus decisiones de triaje?{% else %}How confident did you feel in your triage decisions?{% endif %}<span class="required">*</span></div>
     <div class="likert" data-q="q2">
       <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">{% if language == 'es' %}Nada{% else %}Not at all{% endif %}</span></div>
       <div class="likert-opt" data-val="2">2</div>
@@ -86,9 +75,7 @@
 
   <div class="question" id="q3">
     <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 3</div>
-    <div class="q-text">
-      {% if language == 'es' %}¿Cuánto te ayudó la fase de entrenamiento en la fase cronometrada?{% else %}How much did the training phase help you in the timed phase?{% endif %}<span class="required">*</span>
-    </div>
+    <div class="q-text">{% if language == 'es' %}¿Cuánto te ayudó el robot durante el aprendizaje?{% else %}How much did the robot help you during training?{% endif %}<span class="required">*</span></div>
     <div class="likert" data-q="q3">
       <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">{% if language == 'es' %}Nada{% else %}Not at all{% endif %}</span></div>
       <div class="likert-opt" data-val="2">2</div>
@@ -100,9 +87,7 @@
 
   <div class="question" id="q4">
     <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 4</div>
-    <div class="q-text">
-      {% if language == 'es' %}¿Qué fase de la tarea te resultó más difícil?{% else %}Which phase of the task did you find most challenging?{% endif %}<span class="required">*</span>
-    </div>
+    <div class="q-text">{% if language == 'es' %}¿Qué fase de la tarea te resultó más difícil?{% else %}Which phase of the task did you find most challenging?{% endif %}<span class="required">*</span></div>
     <div class="mc-opts" data-q="q4">
       <div class="mc-opt" data-val="selection">{% if language == 'es' %}Paso 1 — Orden de selección{% else %}Step 1 — Selection order{% endif %}</div>
       <div class="mc-opt" data-val="processes">{% if language == 'es' %}Paso 2 — Procesos adicionales{% else %}Step 2 — Additional processes{% endif %}</div>
@@ -112,14 +97,11 @@
     </div>
   </div>
 
-  <!-- SECTION 2 -->
   <div class="section-label">{% if language == 'es' %}Aprendizaje y reglas{% else %}Learning and rules{% endif %}</div>
 
   <div class="question" id="q5">
     <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 5</div>
-    <div class="q-text">
-      {% if language == 'es' %}¿Qué claridad tuvieron las reglas de triaje para ti?{% else %}How clear did you find the triage rules?{% endif %}<span class="required">*</span>
-    </div>
+    <div class="q-text">{% if language == 'es' %}¿Qué claridad tuvieron las reglas de triaje para ti?{% else %}How clear did you find the triage rules?{% endif %}<span class="required">*</span></div>
     <div class="likert" data-q="q5">
       <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">{% if language == 'es' %}Nada claras{% else %}Very unclear{% endif %}</span></div>
       <div class="likert-opt" data-val="2">2</div>
@@ -131,9 +113,7 @@
 
   <div class="question" id="q6">
     <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 6</div>
-    <div class="q-text">
-      {% if language == 'es' %}Al final de la fase cronometrada, ¿qué bien conocías las reglas?{% else %}By the end of the timed phase, how well had you learned the rules?{% endif %}<span class="required">*</span>
-    </div>
+    <div class="q-text">{% if language == 'es' %}Al final de la sesión, ¿qué tan bien habías aprendido las reglas?{% else %}By the end of the session, how well had you learned the rules?{% endif %}<span class="required">*</span></div>
     <div class="likert" data-q="q6">
       <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">{% if language == 'es' %}Nada{% else %}Not at all{% endif %}</span></div>
       <div class="likert-opt" data-val="2">2</div>
@@ -143,33 +123,50 @@
     </div>
   </div>
 
+  <div class="section-label">{% if language == 'es' %}Experiencia con el robot{% else %}Robot experience{% endif %}</div>
 
-  <!-- SECTION 3 -->
+  <div class="question" id="q7">
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 7</div>
+    <div class="q-text">
+      {% if language == 'es' %}
+      ¿Crees que habrías aprendido mejor las reglas de triaje sin la guía del robot, trabajando de forma independiente?
+      {% else %}
+      Do you think you would have learned the triage rules more effectively without the robot's guidance, working through the task independently?
+      {% endif %}<span class="required">*</span>
+    </div>
+    <div class="mc-opts" data-q="q7">
+      <div class="mc-opt" data-val="yes_definitely">{% if language == 'es' %}Sí, definitivamente{% else %}Yes, definitely{% endif %}</div>
+      <div class="mc-opt" data-val="yes_probably">{% if language == 'es' %}Sí, probablemente{% else %}Yes, probably{% endif %}</div>
+      <div class="mc-opt" data-val="no_difference">{% if language == 'es' %}No habría diferencia{% else %}No difference{% endif %}</div>
+      <div class="mc-opt" data-val="no_probably">{% if language == 'es' %}No, probablemente no{% else %}No, probably not{% endif %}</div>
+      <div class="mc-opt" data-val="no_definitely">{% if language == 'es' %}No, definitivamente no{% else %}No, definitely not{% endif %}</div>
+    </div>
+  </div>
+
   <div class="section-label">{% if language == 'es' %}Preguntas abiertas{% else %}Open-ended{% endif %}</div>
 
   <div class="question" id="q8">
-    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 7</div>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 8</div>
     <div class="q-text">{% if language == 'es' %}¿Cuál fue el aspecto más difícil de la tarea para ti?{% else %}What was the most difficult aspect of the task for you?{% endif %}</div>
     <textarea data-q="q8" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
   </div>
 
   <div class="question" id="q9">
-    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 8</div>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 9</div>
     <div class="q-text">{% if language == 'es' %}¿Qué te habría ayudado a aprender las reglas de triaje de forma más efectiva?{% else %}What would have helped you learn the triage rules more effectively?{% endif %}</div>
     <textarea data-q="q9" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
   </div>
 
   <div class="question" id="q10">
-    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 9</div>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 10</div>
     <div class="q-text">{% if language == 'es' %}¿Algún otro comentario sobre el experimento?{% else %}Any other comments or feedback about the experiment?{% endif %}</div>
     <textarea data-q="q10" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
   </div>
 
-  <button class="submit-btn" onclick="submitQuestionnaire()">
+  <button class="submit-btn" id="submit-btn" onclick="submitQuestionnaire()">
     {% if language == 'es' %}Enviar →{% else %}Submit →{% endif %}
   </button>
 </div>
-
 <script>
 const answers = {};
 
@@ -196,35 +193,26 @@ document.querySelectorAll('.mc-opts').forEach(group => {
 });
 
 document.querySelectorAll('textarea').forEach(ta => {
-  ta.addEventListener('input', () => {
-    answers[ta.dataset.q] = ta.value.trim();
-  });
+  ta.addEventListener('input', () => { answers[ta.dataset.q] = ta.value.trim(); });
 });
 
 async function submitQuestionnaire(){
-  const required = ['q1','q2','q3','q4','q5','q6'];
-  const missing  = required.filter(q => !answers[q]);
-
+  const required = ['q1','q2','q3','q4','q5','q6','q7'];
+  const missing = required.filter(q => !answers[q]);
   if(missing.length > 0){
     missing.forEach(q => {
-      const el = document.getElementById(q);
-      el.style.borderColor = '#E24B4A';
-      el.scrollIntoView({behavior:'smooth', block:'center'});
+      document.getElementById(q).style.borderColor = '#E24B4A';
     });
+    document.getElementById(missing[0]).scrollIntoView({behavior:'smooth',block:'center'});
     return;
   }
-
-  const btn = document.querySelector('.submit-btn');
-  btn.disabled = true;
-  btn.textContent = '...';
-
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = '...';
   await fetch('/api/submit_questionnaire', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({answers})
   });
-
-  window.location.href = '/results';
+  window.location.href = '/robot_results';
 }
 </script>
 </body>
