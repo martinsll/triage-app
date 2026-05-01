@@ -144,13 +144,14 @@ async function submitUES(){
   btn.disabled = true;
   btn.textContent = '...';
 
-  await fetch('/api/submit_ues', {
+  const res = await fetch('/api/submit_ues', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({answers, order: shuffled.map(i=>i.id)})
   });
 
-  window.location.href = FLOW === 'robot' ? '/robot/nasa_tlx' : '/nasa_tlx';
+  const uesData = await res.json();
+  window.location.href = uesData.next || '/nasa_tlx';
 }
 
 renderQuestions();

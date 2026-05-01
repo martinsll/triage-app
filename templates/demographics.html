@@ -117,7 +117,8 @@ async function submitDemographics(){
     valid = false;
   }
   if(CONDITION === 'robot' && !answers['robot_experience']){
-    document.getElementById('dq-robot').style.borderColor = '#E24B4A';
+    const el = document.getElementById('dq-robot');
+    if(el) el.style.borderColor = '#E24B4A';
     valid = false;
   }
   if(!valid){
@@ -126,11 +127,12 @@ async function submitDemographics(){
   }
   const btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = '...';
-  await fetch('/api/submit_demographics',{
+  const res = await fetch('/api/submit_demographics',{
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({answers})
   });
-  window.location.href = CONDITION === 'robot' ? '/robot/ues' : '/game';
+  const data = await res.json();
+  window.location.href = data.next || '/game';
 }
 </script>
 </body>

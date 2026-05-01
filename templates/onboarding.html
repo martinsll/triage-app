@@ -97,8 +97,22 @@ tr:nth-child(even) td{background:#f9f8f6}
       </div>
       <h2>Cómo funciona el juego</h2>
       <p>Cada tarjeta de paciente muestra un conjunto de valores clínicos: frecuencia cardíaca, presión arterial, saturación de oxígeno, frecuencia respiratoria, temperatura, nivel de conciencia, inicio de síntomas, movilidad y contexto social.</p>
-      <p>Usará estos valores junto con las reglas de triaje (explicadas en la página siguiente) para tomar sus decisiones. Tras enviar sus respuestas, el juego indicará qué fue correcto y qué no.</p>
-      <p>Puede reintentar cada fase tantas veces como sea necesario. Debe completar las tres fases de cada grupo antes de continuar.</p>
+      <p>Usará estos valores junto con las reglas de triaje (explicadas en la página siguiente) para tomar sus decisiones.</p>
+
+      <div class="note" style="margin-bottom:12px">
+        <strong>Fase de entrenamiento (3 grupos de 5 pacientes)</strong><br>
+        {% if mode == 'guided' %}
+        El sistema le guiará paso a paso durante cada decisión, explicándole la respuesta correcta y el razonamiento detrás de ella.
+        {% else %}
+        Tomará las decisiones de forma autónoma. Tras validar cada fase, el juego le indicará qué fue correcto y qué no.
+        {% endif %}
+      </div>
+      <div class="note">
+        <strong>Fase cronometrada (3 grupos de 5 pacientes)</strong><br>
+        Triará a los pacientes de forma autónoma y sin ayuda. Su tiempo y el uso de las reglas serán registrados. Intente aplicar lo que ha aprendido.
+      </div>
+
+      <p style="margin-top:16px">Debe completar las tres fases (selección, procesos, destinos) de cada grupo antes de continuar al siguiente.</p>
       <div class="note">
         El botón <strong>Reglas</strong> siempre está visible durante el juego. Puede abrirlo en cualquier momento para consultar las reglas de triaje — úselo tanto como necesite.
       </div>
@@ -140,8 +154,22 @@ tr:nth-child(even) td{background:#f9f8f6}
       </div>
       <h2>How the game works</h2>
       <p>Each patient card shows a set of clinical values: heart rate, blood pressure, oxygen saturation, respiratory rate, temperature, alertness, onset, mobility, and social context.</p>
-      <p>You will use these values together with the triage rules (explained on the next page) to make your decisions. After you submit your answers, the game will tell you what was correct and what was not.</p>
-      <p>You can retry each phase as many times as needed. You must complete all three phases for each group before moving on.</p>
+      <p>You will use these values together with the triage rules (explained on the next page) to make your decisions.</p>
+
+      <div class="note" style="margin-bottom:12px">
+        <strong>Training phase (3 groups of 5 patients)</strong><br>
+        {% if mode == 'guided' %}
+        The system will guide you step by step through each decision, explaining the correct answer and the reasoning behind it.
+        {% else %}
+        You will make all decisions independently. After submitting each phase, the game will tell you what was correct and what was not.
+        {% endif %}
+      </div>
+      <div class="note">
+        <strong>Timed phase (3 groups of 5 patients)</strong><br>
+        You will triage patients autonomously without any assistance. Your time and rule consultations will be recorded. Try to apply what you have learned.
+      </div>
+
+      <p style="margin-top:16px">You must complete all three phases (selection, processes, destinations) for each group before moving on to the next.</p>
       <div class="note">
         A <strong>Rules</strong> button is always visible during the game. You can open it at any time to consult the triage rules — use it as much as you need to.
       </div>

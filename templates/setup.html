@@ -48,36 +48,21 @@
     </div>
   </div>
 
-  <div class="field">
-    <label>Condition <span style="font-size:10px;color:#aaa;text-transform:none">(experimenter only)</span></label>
-    <div class="pills" id="cond-pills">
-      <div class="pill active" data-val="web">Web only</div>
-      <div class="pill" data-val="robot">Robot</div>
-    </div>
-    <p class="cond-note">Select "Robot" only for participants using the physical robot.</p>
-  </div>
-
   <button class="start-btn" onclick="startSession()">Start →</button>
 
-  <div class="admin-link"><a href="/admin">Experimenter view ↗</a></div>
+  <!-- Admin view accessible at /admin (password protected) -->
 </div>
 
 <script>
+const MODE = "{{ mode|default('error_based') }}";
 document.querySelectorAll('#lang-pills .pill').forEach(p => {
   p.addEventListener('click', () => {
     document.querySelectorAll('#lang-pills .pill').forEach(x => x.classList.remove('active'));
     p.classList.add('active');
   });
 });
-document.querySelectorAll('#cond-pills .pill').forEach(p => {
-  p.addEventListener('click', () => {
-    document.querySelectorAll('#cond-pills .pill').forEach(x => x.classList.remove('active'));
-    p.classList.add('active');
-  });
-});
 
 function getLang(){ return document.querySelector('#lang-pills .pill.active')?.dataset.val || 'en'; }
-function getCond(){ return document.querySelector('#cond-pills .pill.active')?.dataset.val || 'web'; }
 
 async function startSession(){
   const btn = document.querySelector('.start-btn');
@@ -89,7 +74,7 @@ async function startSession(){
       body: JSON.stringify({
         participant_id: '{{ participant_id }}',
         language: getLang(),
-        condition: getCond()
+        mode: MODE
       })
     });
     const data = await res.json();

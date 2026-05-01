@@ -13,7 +13,8 @@ Then open: http://localhost:5000
 
 import os, json, sqlite3
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from functools import wraps
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, Response
 from rules_engine import (
     PID_TO_PATIENT, CORRECT_ORDERS,
     get_group_patients, patient_for_client,
@@ -24,6 +25,30 @@ from rules_engine import (
 
 app = Flask(__name__)
 app.secret_key = "triage-training-2024"
+
+import os
+if os.environ.get('RAILWAY_ENVIRONMENT'):
+    app.config.update(
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE='Lax',
+        SESSION_COOKIE_HTTPONLY=True,
+    )
+
+# ─── ADMIN AUTH ───────────────────────────────────────────────────────────────
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'triage2024')
+
+def require_admin(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or auth.password != ADMIN_PASSWORD:
+            return Response(
+                'Admin access required.',
+                401,
+                {'WWW-Authenticate': 'Basic realm="Experimenter View"'}
+            )
+        return f(*args, **kwargs)
+    return decorated
 
 import sqlite3
 
@@ -121,9 +146,19 @@ def ensure_iteration(sess, group):
 # ─── ROUTES ───────────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
+    return redirect(url_for("error_mode"))
+
+@app.route("/error")
+def error_mode():
     n = get_next_participant_number()
     pid = f"P{n:03d}"
-    return render_template("setup.html", participant_id=pid)
+    return render_template("setup.html", participant_id=pid, mode="error_based")
+
+@app.route("/guided")
+def guided_mode():
+    n = get_next_participant_number()
+    pid = f"P{n:03d}"
+    return render_template("setup.html", participant_id=pid, mode="guided")
 
 @app.route("/api/next_participant_id")
 def api_next_participant_id():
@@ -151,6 +186,10 @@ def api_start():
     session["language"]          = language
     session["current_group_idx"] = 0
     session["phase"]             = "train"
+    session["mode"]              = data.get("mode", "error_based")
+    session["after_demographics"] = "/game"
+    session["after_ues"]          = "/nasa_tlx"
+    session["after_nasa_tlx"]     = "/questionnaire"
 
     return jsonify({"session_id": sess["session_id"], "ok": True,
                     "redirect": "/onboarding"})
@@ -205,7 +244,7 @@ def api_submit_questionnaire():
 def onboarding():
     if "session_id" not in session:
         return redirect(url_for("index"))
-    return render_template("onboarding.html", language=session.get("language","en"))
+    return render_template("onboarding.html", language=session.get("language","en"), mode=session.get("mode","error_based"))
 
 @app.route("/api/record_reading", methods=["POST"])
 def api_record_reading():
@@ -233,7 +272,7 @@ def api_record_reading():
 def game():
     if "session_id" not in session:
         return redirect(url_for("index"))
-    return render_template("game.html", language=session.get("language","en"))
+    return render_template("game.html", language=session.get("language","en"), mode=session.get("mode","error_based"))
 
 @app.route("/api/group_patients")
 def api_group_patients():
@@ -248,6 +287,7 @@ def api_group_patients():
     group = groups[idx]
     patients = get_group_patients(set_label, group)
 
+    pids = CORRECT_ORDERS[set_label][group]
     return jsonify({
         "done": False,
         "set": set_label,
@@ -257,7 +297,9 @@ def api_group_patients():
         "language": session.get("language", "en"),
         "phase": session.get("phase", "train"),
         "patients": [patient_for_client(p, set_label) for p in patients],
-        "correct_order": CORRECT_ORDERS[set_label][group],
+        "correct_order": pids,
+        "correct_processes":    {pid: correct_processes_for(set_label, pid) for pid in pids},
+        "correct_destinations": {pid: correct_destination_for(set_label, pid) for pid in pids},
     })
 
 @app.route("/api/validate", methods=["POST"])
@@ -323,7 +365,7 @@ def api_validate():
             it["processes"]["final_score"] = "5/5"
 
         pids = CORRECT_ORDERS[set_label][group]
-        correct_all = {pid: correct_processes(set_label, pid) for pid in pids}
+        correct_all = {pid: correct_processes_for(set_label, pid) for pid in pids}
         result = {
             "score": score, "max": 5,
             "errors": errors,
@@ -348,7 +390,7 @@ def api_validate():
             it["destinations"]["final_score"] = "5/5"
 
         pids = CORRECT_ORDERS[set_label][group]
-        correct_all = {pid: correct_destination(set_label, pid) for pid in pids}
+        correct_all = {pid: correct_destination_for(set_label, pid) for pid in pids}
         result = {
             "score": score, "max": 5,
             "errors": errors,
@@ -392,7 +434,7 @@ def api_complete_group():
                 # Test done → go to results
                 sess["completed_at"] = datetime.now().isoformat()
                 save_session(sess)
-                return jsonify({"done": True, "next": "results"})
+                return jsonify({"done": True, "next": "ues"})
     return jsonify({"done": False, "next_group": groups[idx + 1]})
 
 @app.route("/api/record_game_start", methods=["POST"])
@@ -419,6 +461,71 @@ def results():
 
 
 # ─── ROBOT QUESTIONNAIRE ROUTES ───────────────────────────────────────────────
+
+@app.route("/demographics")
+def demographics():
+    if "session_id" not in session:
+        return redirect(url_for("index"))
+    return render_template("demographics.html",
+        language=session.get("language","en"),
+        condition=session.get("condition","web"))
+
+@app.route("/api/submit_demographics", methods=["POST"])
+def api_submit_demographics():
+    data = request.json
+    sid  = session.get("session_id")
+    sess = load_session(sid)
+    if not sess:
+        return jsonify({"ok": False}), 400
+    sess["demographics"] = {
+        "answers":      data.get("answers", {}),
+        "submitted_at": datetime.now().isoformat(),
+    }
+    save_session(sess)
+    return jsonify({"ok": True, "next": session.get("after_demographics", "/game")})
+
+@app.route("/ues_questionnaire")
+def ues_questionnaire():
+    if "session_id" not in session:
+        return redirect(url_for("index"))
+    return render_template("ues_questionnaire.html", language=session.get("language","en"))
+
+@app.route("/api/submit_ues", methods=["POST"])
+def api_submit_ues():
+    data = request.json
+    sid  = session.get("session_id")
+    sess = load_session(sid)
+    if not sess:
+        return jsonify({"ok": False}), 400
+    sess["ues_questionnaire"] = {
+        "answers":      data.get("answers", {}),
+        "order":        data.get("order", []),
+        "submitted_at": datetime.now().isoformat(),
+    }
+    save_session(sess)
+    return jsonify({"ok": True, "next": session.get("after_ues", "/nasa_tlx")})
+
+@app.route("/nasa_tlx")
+def nasa_tlx():
+    if "session_id" not in session:
+        return redirect(url_for("index"))
+    return render_template("nasa_tlx.html", language=session.get("language","en"))
+
+@app.route("/api/submit_nasa_tlx", methods=["POST"])
+def api_submit_nasa_tlx():
+    data = request.json
+    sid  = session.get("session_id")
+    sess = load_session(sid)
+    if not sess:
+        return jsonify({"ok": False}), 400
+    sess["nasa_tlx"] = {
+        "answers":      data.get("answers", {}),
+        "submitted_at": datetime.now().isoformat(),
+    }
+    save_session(sess)
+    return jsonify({"ok": True, "next": session.get("after_nasa_tlx", "/questionnaire")})
+
+
 @app.route("/robot")
 def robot_index():
     n = get_next_participant_number()
@@ -448,6 +555,7 @@ def api_start_robot():
     session["after_demographics"] = "/robot_ues"
     session["after_ues"]          = "/robot_nasa_tlx"
     session["after_nasa_tlx"]     = "/robot_questionnaire"
+    session["mode"]              = "robot"
 
     return jsonify({"ok": True, "redirect": "/robot_demographics"})
 
@@ -488,11 +596,13 @@ def robot_results():
         language=session.get("language","en"))
 
 @app.route("/admin")
+@require_admin
 def admin():
     sessions = load_all_sessions()
     return render_template("admin.html", sessions=sessions)
 
 @app.route("/api/sessions")
+@require_admin
 def api_sessions():
     return jsonify(load_all_sessions())
 

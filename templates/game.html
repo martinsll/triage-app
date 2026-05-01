@@ -270,6 +270,7 @@ select:focus{border-color:#378ADD}
 
 <script>
 const LANG = "{{ language }}";
+const MODE = "{{ mode|default('error_based') }}";
 
 const _T = {
   en: {
@@ -366,6 +367,9 @@ let STATE={
   phaseTimes:{},
   ruleConsultations:[],
   ruleOpenedAt:null,
+  guidedStep:0,
+  correctProcesses:null,
+  correctDestinations:null,
 };
 
 function now(){return Date.now();}
@@ -386,6 +390,8 @@ async function loadGroup(){
   if(data.done){window.location.href='/results';return;}
   STATE.patients=data.patients;
   STATE.correctOrder=data.correct_order;
+  STATE.correctProcesses=data.correct_processes||null;
+  STATE.correctDestinations=data.correct_destinations||null;
   STATE.group=data.group;
   STATE.groupIndex=data.group_index;
   STATE.totalGroups=data.total_groups;
@@ -413,7 +419,8 @@ async function loadGroup(){
   document.getElementById('group-badge').textContent='Group '+STATE.group;
   document.getElementById('lang-badge').textContent=STATE.language.toUpperCase();
   renderPhaseProgress();
-  renderSelection();
+  if(MODE==='guided') renderGuidedSelection();
+  else renderSelection();
 }
 
 // ── RULES MODAL ───────────────────────────────────────────────────────────────
@@ -561,10 +568,12 @@ function renderSelection(){
 function handleCardClick(pid){
   if(Object.values(STATE.selection).includes(pid))return;
   STATE.selectedCard=STATE.selectedCard===pid?null:pid;
-  renderSelection();
+  if(MODE==='guided') renderGuidedSelectionState();
+  else renderSelection();
 }
 
 function handleSlotClick(slot){
+  if(MODE==='guided'){ handleGuidedSlotClick(slot); return; }
   if(STATE.selection[slot]){
     delete STATE.selection[slot];
     STATE.selectedCard=null;
@@ -855,6 +864,285 @@ function renderDestFeedback(data){
 }
 
 // ── COMPLETE GROUP ────────────────────────────────────────────────────────────
+// ── GUIDED MODE ───────────────────────────────────────────────────────────────
+function getExpText(p){
+  if(STATE.phase==='selection')
+    return LANG==='es'?(p.exp_selection_es||p.explanation_es||''):(p.exp_selection_en||p.explanation_en||'');
+  if(STATE.phase==='processes')
+    return LANG==='es'?(p.exp_processes_es||p.explanation_es||''):(p.exp_processes_en||p.explanation_en||'');
+  return LANG==='es'?(p.exp_destination_es||p.explanation_es||''):(p.exp_destination_en||p.explanation_en||'');
+}
+
+function guidedHintBox(text){
+  if(!text) return '';
+  return `<div style="background:#F0F7FF;border:0.5px solid #B0CDED;border-radius:8px;
+    padding:12px 16px;font-size:13px;color:#185FA5;line-height:1.6;margin-bottom:16px">
+    💡 ${text}</div>`;
+}
+
+// GUIDED SELECTION
+function renderGuidedSelection(){
+  STATE.phase='selection';
+  STATE.guidedStep=0;
+  renderPhaseProgress();
+  renderGuidedSelectionState();
+}
+
+function renderGuidedSelectionState(){
+  const step=STATE.guidedStep;
+  if(step>=5){autoSubmitGuidedSelection();return;}
+  const targetPid=STATE.correctOrder[step];
+  const targetP=STATE.patients.find(p=>p.pid===targetPid);
+  const hint=`${LANG==='es'?'Ranura':'Slot'} ${step+1}: ${getExpText(targetP)}`;
+  const assignedPids=new Set(Object.values(STATE.selection));
+  const unassigned=STATE.patients.filter(p=>!assignedPids.has(p.pid))
+    .sort((a,b)=>parseInt(a.pid.slice(1))-parseInt(b.pid.slice(1)));
+
+  let html=`<div class="phase-banner">
+    <div class="phase-num">1</div>
+    <div><div class="phase-title">${T.phase1_title}</div>
+    <div class="phase-hint">${LANG==='es'?'Coloca al siguiente paciente en su ranura.':'Place the next patient in their slot.'}</div></div>
+  </div>${guidedHintBox(hint)}<div class="slots-grid">`;
+
+  for(let s=1;s<=5;s++){
+    const pid=STATE.selection[s];
+    const p=pid?STATE.patients.find(x=>x.pid===pid):null;
+    html+=`<div class="slot ${pid?'occupied':''}" onclick="handleSlotClick(${s})">
+      <div class="slot-num">${T.slot_label} ${s}</div>`;
+    if(p) html+=`<div style="font-size:10px;font-weight:500;color:#1a1a1a;text-align:center">${p.pid}<br>${p.name.split(',')[0]}</div>
+      <span class="risk-tag risk-${p.risk}" style="margin-top:4px">${tRisk(p.risk)}</span>`;
+    else html+=`<span class="slot-label">${STATE.selectedCard?T.slot_click:T.slot_empty}</span>`;
+    html+=`</div>`;
+  }
+  html+=`</div><div style="font-size:11px;color:#888;margin-bottom:10px">${T.unassigned_hint}</div>
+  <div class="patients-grid">`;
+  unassigned.forEach(p=>{html+=renderPatientCard(p,{selected:STATE.selectedCard===p.pid});});
+  if(unassigned.length===0) html+=`<p style="font-size:12px;color:#888">${T.all_assigned}</p>`;
+  html+=`</div>`;
+  document.getElementById('main-content').innerHTML=html;
+}
+
+function handleGuidedSlotClick(slot){
+  if(STATE.selection[slot]){
+    delete STATE.selection[slot];
+    STATE.selectedCard=null;
+    renderGuidedSelectionState();return;
+  }
+  if(STATE.selectedCard){
+    Object.keys(STATE.selection).forEach(s=>{if(STATE.selection[s]===STATE.selectedCard)delete STATE.selection[s];});
+    STATE.selection[slot]=STATE.selectedCard;
+    STATE.selectedCard=null;
+    // Check advance only if correct patient placed in correct slot
+    const targetSlot=STATE.guidedStep+1;
+    const targetPid=STATE.correctOrder[STATE.guidedStep];
+    if(slot===targetSlot && STATE.selection[slot]===targetPid){
+      STATE.guidedStep++;
+      if(STATE.guidedStep>=5) autoSubmitGuidedSelection();
+      else renderGuidedSelectionState();
+    } else {
+      renderGuidedSelectionState();
+    }
+  }
+}
+
+async function autoSubmitGuidedSelection(){
+  const placed={};
+  STATE.correctOrder.forEach((pid,i)=>placed[String(i+1)]=pid);
+  STATE.selection={...placed};
+  const res=await fetch('/api/validate',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({phase:'selection',answers:placed,group:STATE.group,
+      phase_time_sec:getPhaseTime('selection'),rule_metrics:getRuleMetrics()})});
+  await res.json();
+  STATE.selectionDone=true;
+  renderGuidedProcesses();
+}
+
+// GUIDED PROCESSES
+function renderGuidedProcesses(){
+  STATE.phase='processes';
+  STATE.guidedStep=0;
+  renderPhaseProgress();
+  renderGuidedProcessState();
+}
+
+function renderGuidedProcessState(){
+  const step=STATE.guidedStep;
+  if(step>=5){autoSubmitGuidedProcesses();return;}
+  const pid=STATE.correctOrder[step];
+  const p=STATE.patients.find(x=>x.pid===pid);
+  const hint=getExpText(p);
+  const correct=(STATE.correctProcesses&&STATE.correctProcesses[pid])||[];
+
+  // If this patient has no processes, show a confirm button instead
+  const noProcsNeeded = correct.length === 0;
+
+  let rows='';
+  STATE.correctOrder.forEach((ppid,idx)=>{
+    const pp=STATE.patients.find(x=>x.pid===ppid);
+    const procs=STATE.processes[ppid]||[];
+    const isActive=idx===step;
+    const disabled=idx!==step;
+    rows+=`<tr style="${isActive?'background:#F8FBFF':''}">
+      <td style="padding:8px 12px;border:0.5px solid #e0ddd5;font-size:12px">
+        <span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;
+          background:${COND_COLORS[pp.condition]}22;color:${COND_COLORS[pp.condition]}">${tCond(pp.condition)}</span>
+        <span class="risk-tag risk-${pp.risk}" style="margin-left:4px">${tRisk(pp.risk)}</span>
+        <div style="font-size:11px;color:#555;margin-top:2px">${pp.name}</div>
+      </td>
+      <td style="padding:8px 12px;border:0.5px solid #e0ddd5">
+        ${PROCESSES.map(proc=>{
+          const active=procs.includes(proc);
+          return `<span class="proc-check ${active?'active':''}"
+            data-pid="${ppid}" data-proc="${proc}"
+            style="${disabled?'opacity:0.4;pointer-events:none;cursor:default':''}"
+            onclick="${disabled?'':'toggleGuidedProc(\''+ppid+'\',\''+proc+'\')'}">${tProc(proc)}</span>`;
+        }).join('')}
+      </td>
+    </tr>`;
+  });
+
+  const noProcBtn = noProcsNeeded ? `
+    <div style="margin-top:12px">
+      <button class="btn btn-primary" onclick="confirmNoProcesses()">
+        ${LANG==='es'?'✓ Sin procesos adicionales':'✓ No additional processes'}
+      </button>
+    </div>` : '';
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="phase-banner">
+      <div class="phase-num">2</div>
+      <div><div class="phase-title">${T.phase2_title}</div></div>
+    </div>
+    ${guidedHintBox(hint)}
+    ${noProcBtn}
+    <table class="proc-table">
+      <thead><tr><th>${T.patient_col}</th><th>${T.proc_col}</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function toggleGuidedProc(pid,proc){
+  if(!STATE.processes[pid]) STATE.processes[pid]=[];
+  const idx=STATE.processes[pid].indexOf(proc);
+  if(idx===-1) STATE.processes[pid].push(proc);
+  else STATE.processes[pid].splice(idx,1);
+  // Check if current patient matches correct processes
+  const step=STATE.guidedStep;
+  const targetPid=STATE.correctOrder[step];
+  if(pid!==targetPid){renderGuidedProcessState();return;}
+  const correct=(STATE.correctProcesses&&STATE.correctProcesses[targetPid])||[];
+  const actual=[...(STATE.processes[targetPid]||[])].sort();
+  const exp=[...correct].sort();
+  if(JSON.stringify(actual)===JSON.stringify(exp)){
+    STATE.guidedStep++;
+    if(STATE.guidedStep>=5) autoSubmitGuidedProcesses();
+    else renderGuidedProcessState();
+  } else {
+    renderGuidedProcessState();
+  }
+}
+
+function confirmNoProcesses(){
+  STATE.guidedStep++;
+  if(STATE.guidedStep>=5) autoSubmitGuidedProcesses();
+  else renderGuidedProcessState();
+}
+
+async function autoSubmitGuidedProcesses(){
+  const placed={};
+  STATE.correctOrder.forEach(pid=>{
+    placed[pid]=(STATE.correctProcesses&&STATE.correctProcesses[pid])||STATE.processes[pid]||[];
+  });
+  const res=await fetch('/api/validate',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({phase:'processes',answers:placed,group:STATE.group,
+      phase_time_sec:getPhaseTime('processes'),rule_metrics:getRuleMetrics()})});
+  await res.json();
+  STATE.processesDone=true;
+  renderGuidedDestinations();
+}
+
+// GUIDED DESTINATIONS
+function renderGuidedDestinations(){
+  STATE.phase='destinations';
+  STATE.guidedStep=0;
+  renderPhaseProgress();
+  renderGuidedDestState();
+}
+
+function renderGuidedDestState(){
+  const step=STATE.guidedStep;
+  if(step>=5){autoSubmitGuidedDestinations();return;}
+  const pid=STATE.correctOrder[step];
+  const p=STATE.patients.find(x=>x.pid===pid);
+  const hint=getExpText(p);
+
+  let rows='';
+  STATE.correctOrder.forEach((ppid,idx)=>{
+    const pp=STATE.patients.find(x=>x.pid===ppid);
+    const cur=STATE.destinations[ppid]||'';
+    const isActive=idx===step;
+    const disabled=idx!==step;
+    rows+=`<tr style="${isActive?'background:#F8FBFF':''}">
+      <td style="padding:8px 12px;border:0.5px solid #e0ddd5;font-size:12px">
+        <span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;
+          background:${COND_COLORS[pp.condition]}22;color:${COND_COLORS[pp.condition]}">${tCond(pp.condition)}</span>
+        <span class="risk-tag risk-${pp.risk}" style="margin-left:4px">${tRisk(pp.risk)}</span>
+        <div style="font-size:11px;color:#555;margin-top:2px">${pp.name}</div>
+      </td>
+      <td style="padding:8px 12px;border:0.5px solid #e0ddd5">
+        <select ${disabled?'disabled style="opacity:0.4"':''}
+          onchange="${disabled?'':'handleGuidedDestChange(\''+ppid+'\',this.value)'}"
+          style="width:100%;padding:6px 8px;border:0.5px solid #d0cdc5;border-radius:6px;font-size:12px;background:#fff">
+          <option value="">${T.select_dest}</option>
+          ${DESTINATIONS.map(d=>`<option value="${d}" ${cur===d?'selected':''}>${tDest(d)}</option>`).join('')}
+        </select>
+      </td>
+    </tr>`;
+  });
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="phase-banner">
+      <div class="phase-num">3</div>
+      <div><div class="phase-title">${T.phase3_title}</div></div>
+    </div>
+    ${guidedHintBox(hint)}
+    <table class="proc-table">
+      <thead><tr><th>${T.patient_col}</th><th>${T.dest_col}</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function handleGuidedDestChange(pid,val){
+  STATE.destinations[pid]=val;
+  const step=STATE.guidedStep;
+  const targetPid=STATE.correctOrder[step];
+  if(pid!==targetPid) return;
+  const correctDest=(STATE.correctDestinations&&STATE.correctDestinations[targetPid])||'';
+  if(val===correctDest){
+    STATE.guidedStep++;
+    if(STATE.guidedStep>=5) autoSubmitGuidedDestinations();
+    else renderGuidedDestState();
+  }
+}
+
+async function autoSubmitGuidedDestinations(){
+  const placed={};
+  STATE.correctOrder.forEach(pid=>{
+    placed[pid]=(STATE.correctDestinations&&STATE.correctDestinations[pid])||STATE.destinations[pid]||'';
+  });
+  const res=await fetch('/api/validate',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({phase:'destinations',answers:placed,group:STATE.group,
+      phase_time_sec:getPhaseTime('destinations'),rule_metrics:getRuleMetrics()})});
+  await res.json();
+  // Append button without rebuilding DOM (innerHTML += would reset selects)
+  const btnDiv=document.createElement('div');
+  btnDiv.className='btn-row';
+  btnDiv.style.marginTop='16px';
+  btnDiv.innerHTML=`<button class="btn btn-primary" onclick="completeGroup()">${T.btn_next_group}</button>`;
+  document.getElementById('main-content').appendChild(btnDiv);
+}
+// ── END GUIDED MODE ───────────────────────────────────────────────────────────
+
 async function completeGroup(){
   const res=await fetch('/api/complete_group',{method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -862,7 +1150,8 @@ async function completeGroup(){
   const data=await res.json();
   if(data.done){
     if(data.next==='transition') window.location.href='/transition';
-    else if(data.next==='results') window.location.href='/questionnaire';
+    else if(data.next==='ues') window.location.href='/ues_questionnaire';
+    else if(data.next==='results') window.location.href='/ues_questionnaire';
     else window.location.href='/questionnaire';
   } else {
     loadGroup();
