@@ -47,15 +47,18 @@ tr:last-child td{border-bottom:none}
     {% for s in sessions %}
       {% set max_each = s.groups|length * 5 %}
       {% set max_total = max_each * 3 %}
-      {% set total_sel = 0 %}{% set total_proc = 0 %}{% set total_dest = 0 %}
+      {% set ns = namespace(sel=0, proc=0, dest=0) %}
       {% for grp_key, it in s.iterations.items() %}
         {% set fs = it.selection.final_score or (it.selection.attempts[-1].score if it.selection.attempts else '0/5') %}
         {% set fp = it.processes.final_score or (it.processes.attempts[-1].score if it.processes.attempts else '0/5') %}
         {% set fd = it.destinations.final_score or (it.destinations.attempts[-1].score if it.destinations.attempts else '0/5') %}
-        {% set total_sel = total_sel + fs.split('/')[0]|int %}
-        {% set total_proc = total_proc + fp.split('/')[0]|int %}
-        {% set total_dest = total_dest + fd.split('/')[0]|int %}
+        {% set ns.sel = ns.sel + fs.split('/')[0]|int %}
+        {% set ns.proc = ns.proc + fp.split('/')[0]|int %}
+        {% set ns.dest = ns.dest + fd.split('/')[0]|int %}
       {% endfor %}
+      {% set total_sel = ns.sel %}
+      {% set total_proc = ns.proc %}
+      {% set total_dest = ns.dest %}
       {% set total = total_sel + total_proc + total_dest %}
       <tr>
         <td><strong>{{ s.participant_id }}</strong></td>

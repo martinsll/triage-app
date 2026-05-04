@@ -138,7 +138,7 @@ def phase_based_score(set_label: str, group: int, placed: dict) -> dict:
     }
 
 # ─── VALIDATION ───────────────────────────────────────────────────────────────
-def validate_selection(set_label: str, group: int, placed: dict):
+def validate_selection(set_label: str, group: int, placed: dict, language: str = "en"):
     """
     Validate participant's selection order.
     placed: {str(slot): pid}  e.g. {"1": "P02", "2": "P01", ...}
@@ -159,14 +159,16 @@ def validate_selection(set_label: str, group: int, placed: dict):
                 "placed":        placed_pid,
                 "expected":      exp_pid,
                 "expected_name": p["name"],
-                "explanation":   p.get("explanation_en", ""),
+                "explanation":   p.get(f"exp_selection_{language}", p.get("explanation_en", "")),
+                "explanation_es": p.get("exp_selection_es", p.get("explanation_es", "")),
+                "explanation_en": p.get("exp_selection_en", p.get("explanation_en", "")),
             })
     placed_list = [placed.get(str(i + 1)) for i in range(5)]
     tau   = kendall_tau(placed_list, correct)
     phase = phase_based_score(set_label, group, placed)
     return score, errors, correct, tau, phase
 
-def validate_processes(set_label: str, group: int, placed: dict):
+def validate_processes(set_label: str, group: int, placed: dict, language: str = "en"):
     """
     Validate process card assignments.
     placed: {pid: [process_name, ...]}
@@ -189,11 +191,13 @@ def validate_processes(set_label: str, group: int, placed: dict):
                 "placed":      actual,
                 "missing":     [x for x in expected if x not in actual],
                 "extra":       [x for x in actual   if x not in expected],
-                "explanation": p.get("explanation_en", ""),
+                "explanation":   p.get(f"exp_processes_{language}", p.get("explanation_en", "")),
+                "explanation_en": p.get("exp_processes_en", p.get("explanation_en", "")),
+                "explanation_es": p.get("exp_processes_es", p.get("explanation_es", "")),
             })
     return score, errors
 
-def validate_destinations(set_label: str, group: int, placed: dict):
+def validate_destinations(set_label: str, group: int, placed: dict, language: str = "en"):
     """
     Validate destination assignments.
     placed: {pid: destination_string}
@@ -214,7 +218,9 @@ def validate_destinations(set_label: str, group: int, placed: dict):
                 "name":        p["name"],
                 "expected":    expected,
                 "placed":      actual,
-                "explanation": p.get("explanation_en", ""),
+                "explanation":   p.get(f"exp_destination_{language}", p.get("explanation_en", "")),
+                "explanation_en": p.get("exp_destination_en", p.get("explanation_en", "")),
+                "explanation_es": p.get("exp_destination_es", p.get("explanation_es", "")),
             })
     return score, errors
 
@@ -242,12 +248,6 @@ def patient_for_client(p: dict, set_label: str, include_answers: bool = False) -
         "risk":          r,
         "explanation_en": p.get("explanation_en", ""),
         "explanation_es": p.get("explanation_es", ""),
-        "exp_selection_en":  p.get("exp_selection_en",  p.get("explanation_en", "")),
-        "exp_selection_es":  p.get("exp_selection_es",  p.get("explanation_es", "")),
-        "exp_processes_en":  p.get("exp_processes_en",  p.get("explanation_en", "")),
-        "exp_processes_es":  p.get("exp_processes_es",  p.get("explanation_es", "")),
-        "exp_destination_en": p.get("exp_destination_en", p.get("explanation_en", "")),
-        "exp_destination_es": p.get("exp_destination_es", p.get("explanation_es", "")),
     }
     if include_answers:
         d["correct_processes"]  = correct_processes_for(set_label, p["pid"])

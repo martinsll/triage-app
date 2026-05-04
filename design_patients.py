@@ -10,7 +10,7 @@ import json
 HR_CRIT_HIGH=130; HR_CRIT_LOW=40; HR_MOD=101
 BP_HIGH=140; BP_LOW=90
 SPO2_CRIT=80; SPO2_MOD=90
-RR_CRIT_HIGH=30; RR_CRIT_LOW=10; RR_MOD=21
+RR_CRIT_HIGH=30; RR_MOD=21; RR_NORM_LOW=11
 TEMP_CRIT=39.0; TEMP_CRIT_LOW=35.0; TEMP_MOD=38.0
 
 def hr_level(v):
@@ -29,9 +29,8 @@ def spo2_level(v):
     return "Normal"
 
 def rr_level(v):
-    if v>RR_CRIT_HIGH or v<RR_CRIT_LOW: return "Critical"
+    if v>RR_CRIT_HIGH: return "Critical"
     if v>=RR_MOD: return "High"
-    return "Normal"
 
 def temp_level(v):
     if v>TEMP_CRIT or v<TEMP_CRIT_LOW: return "Critical"
@@ -326,7 +325,7 @@ PATIENTS_A = [
      "exp_destination_es":"Amara D. es Trauma Moderado con inicio Progresivo → Quirófano."},
 
     {"pid":"P13","name":"Priya J., 47F","group":3,
-     "condition":"Neurological","hr":78,"bp":132,"spo2":96,"rr":8,"temp":36.8,
+     "condition":"Neurological","hr":78,"bp":132,"spo2":96,"rr":32,"temp":36.8,
      "alertness":"Oriented","onset":"Sudden","mobility":"Ambulatory",
      "companion":"Unaccompanied","cooperation":"Cooperative",
      "explanation_en":"Priya is Neurological, Alert with normal BP — Stable. But Sudden onset for a Stable Neurological patient means Monitored Ward, not General Ward. She ranks before Mia because Stable Sudden beats Moderate Recurring.",
@@ -539,7 +538,7 @@ PATIENTS_B = [
      "exp_destination_es":"Igor P. es Neurológico Estable con inicio Súbito → Sala Vigilada."},
 
     {"pid":"P14","name":"Zara O., 48F","group":3,
-     "condition":"Cardiac","hr":90,"bp":122,"spo2":97,"rr":8,"temp":36.7,
+     "condition":"Cardiac","hr":90,"bp":122,"spo2":97,"rr":33,"temp":36.7,
      "alertness":"Oriented","onset":"Progressive","mobility":"Ambulatory",
      "companion":"Unaccompanied","cooperation":"Agitated",
      "explanation_en":"Zara is Cardiac with normal HR and BP — Stable. Sudden onset means Monitored Ward. She is Agitated and Unaccompanied so she needs Interpreter support.",

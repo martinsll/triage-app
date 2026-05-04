@@ -131,14 +131,15 @@ def init_session_data(participant_id, set_label, groups, language):
         "completed_at": None,
         "iterations": {}
     }
-def ensure_iteration(sess, group):
-    key = str(group)
+def ensure_iteration(sess, group, phase="train"):
+    key = f"{phase}_{group}"
     if key not in sess["iterations"]:
         sess["iterations"][key] = {
             "group": group,
             "selection":    {"attempts": [], "final_score": None, "questions_asked": 0},
             "processes":    {"attempts": [], "final_score": None},
             "destinations": {"attempts": [], "final_score": None},
+            "phase": phase,
             "completed": False
         }
     return sess["iterations"][key]
@@ -324,7 +325,8 @@ def api_validate():
     timestamp = datetime.now().isoformat()
 
     if phase == "selection":
-        score, errors, correct, tau, phase_score = validate_selection(set_label, group, answers)
+        lang = session.get("language","en")
+        score, errors, correct, tau, phase_score = validate_selection(set_label, group, answers, lang)
         attempt_num = len(it["selection"]["attempts"]) + 1
         it["selection"]["attempts"].append({
             "attempt":          attempt_num,
@@ -350,7 +352,8 @@ def api_validate():
         }
 
     elif phase == "processes":
-        score, errors = validate_processes(set_label, group, answers)
+        lang = session.get("language","en")
+        score, errors = validate_processes(set_label, group, answers, lang)
         attempt_num = len(it["processes"]["attempts"]) + 1
         it["processes"]["attempts"].append({
             "attempt":        attempt_num,
@@ -375,7 +378,8 @@ def api_validate():
         }
 
     elif phase == "destinations":
-        score, errors = validate_destinations(set_label, group, answers)
+        lang = session.get("language","en")
+        score, errors = validate_destinations(set_label, group, answers, lang)
         attempt_num = len(it["destinations"]["attempts"]) + 1
         it["destinations"]["attempts"].append({
             "attempt":        attempt_num,
@@ -413,7 +417,8 @@ def api_complete_group():
 
     sess = load_session(sid)
     if sess:
-        it = ensure_iteration(sess, group)
+        game_phase = session.get("phase", "train")
+        it = ensure_iteration(sess, group, game_phase)
         it["completed"] = True
         it["completed_at"] = datetime.now().isoformat()
         save_session(sess)
@@ -594,6 +599,25 @@ def robot_results():
         return redirect(url_for("robot_index"))
     return render_template("robot_results.html",
         language=session.get("language","en"))
+
+
+@app.route("/api/record_correction", methods=["POST"])
+def api_record_correction():
+    data       = request.json
+    phase      = data.get("phase")        # selection | processes | destinations
+    group      = data.get("group")
+    correction = data.get("correction", {})
+    sid  = session.get("session_id")
+    sess = load_session(sid)
+    if not sess or not phase or not group:
+        return jsonify({"ok": False}), 400
+    game_phase = session.get("phase", "train")
+    it = ensure_iteration(sess, group, game_phase)
+    attempts = it.get(phase, {}).get("attempts", [])
+    if attempts:
+        attempts[-1]["correction"] = correction
+    save_session(sess)
+    return jsonify({"ok": True})
 
 @app.route("/admin")
 @require_admin

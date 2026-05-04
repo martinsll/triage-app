@@ -2,18 +2,7 @@
 """
 Triage Session Data Extractor — Single flat CSV
 =================================================
-One row per participant with all data flattened.
-
-Columns:
-  - Participant info: id, condition, mode, language, set, dates
-  - Demographics: age, gender, education, robot_experience
-  - Timing: train/test duration, onboarding time
-  - Game scores: per group per phase (train + test separately)
-  - Kendall tau and phase-based scores per group (selection only)
-  - Phase times and rule consultations per group per phase
-  - NASA-TLX: 6 subscales + mean
-  - UES: 12 items + 4 dimension means + total mean
-  - Questionnaire: all answers
+One row per participant. All data flattened.
 
 Usage:
   python analyze_sessions.py                          # uses data/sessions.db
@@ -47,25 +36,98 @@ def safe_int(val):
 
 
 def duration_sec(t1, t2):
-    if not t1 or not t2:
-        return None
-    try:
-        return round((datetime.fromisoformat(t2) - datetime.fromisoformat(t1)).total_seconds())
-    except:
-        return None
+    if not t1 or not t2: return None
+    try: return round((datetime.fromisoformat(t2) - datetime.fromisoformat(t1)).total_seconds())
+    except: return None
+
+
+def flatten_phase(row, prefix, it, phase):
+    """Flatten one phase (selection/processes/destinations) into row."""
+    ph  = it.get(phase, {})
+    att = ph.get('attempts', [])
+    if not att:
+        return
+    a  = att[-1]
+    sc = safe_int(a.get('score', 0)) or 0
+    rc = a.get('rule_metrics', {}) or {}
+
+    row[f'{prefix}_{phase}_score']        = sc
+    row[f'{prefix}_{phase}_time_sec']     = a.get('phase_time_sec')
+    row[f'{prefix}_{phase}_rule_consult'] = rc.get('total_consultations', 0) if isinstance(rc, dict) else 0
+    row[f'{prefix}_{phase}_rule_time_sec']= round(rc.get('total_time_ms', 0) / 1000, 1) if isinstance(rc, dict) else 0
+
+    # Correction screen tracking (to be added later)
+    corr = a.get('correction', {}) or {}
+    row[f'{prefix}_{phase}_correction_time_sec']      = corr.get('time_sec')
+    row[f'{prefix}_{phase}_correction_rule_time_sec'] = round(corr.get('rule_time_ms', 0) / 1000, 1) if corr else 0
+
+    if phase == 'selection':
+        row[f'{prefix}_kendall_tau']         = a.get('kendall_tau')
+        ps = a.get('phase_score', {})
+        if isinstance(ps, dict):
+            row[f'{prefix}_phase_score']         = ps.get('total')
+            row[f'{prefix}_tier_ordering_score'] = ps.get('tier_ordering_score')
+            row[f'{prefix}_within_tier_score']   = ps.get('within_tier_score')
+
+
+def flatten_label(row, label, iters):
+    """Flatten all groups for a given label (train or test)."""
+    # Filter iterations by phase label
+    label_iters = {k: v for k, v in iters.items()
+                   if v.get('phase', 'train') == label or k.startswith(f'{label}_')}
+
+    # Sort by group number
+    sorted_iters = sorted(label_iters.items(),
+                          key=lambda x: int(x[1].get('group', x[0].split('_')[-1])))
+
+    total_sel = total_proc = total_dest = 0
+    total_rule_consult = 0
+    total_rule_time_ms = 0
+
+    # Totals first
+    for _, it in sorted_iters:
+        grp = it.get('group', 0)
+        prefix = f'{label}_g{grp}'
+        for phase in ('selection', 'processes', 'destinations'):
+            ph = it.get(phase, {})
+            att = ph.get('attempts', [])
+            if att:
+                sc = safe_int(att[-1].get('score', 0)) or 0
+                rc = att[-1].get('rule_metrics', {}) or {}
+                if phase == 'selection':   total_sel  += sc
+                if phase == 'processes':   total_proc += sc
+                if phase == 'destinations':total_dest += sc
+                if isinstance(rc, dict):
+                    total_rule_consult += rc.get('total_consultations', 0)
+                    total_rule_time_ms += rc.get('total_time_ms', 0)
+
+    row[f'{label}_sel_total']     = total_sel
+    row[f'{label}_proc_total']    = total_proc
+    row[f'{label}_dest_total']    = total_dest
+    row[f'{label}_total']         = total_sel + total_proc + total_dest
+    row[f'{label}_max']           = len(sorted_iters) * 15
+    row[f'{label}_rule_consult']  = total_rule_consult
+    row[f'{label}_rule_time_sec'] = round(total_rule_time_ms / 1000, 1)
+
+    # Per-group detail
+    for _, it in sorted_iters:
+        grp    = it.get('group', 0)
+        prefix = f'{label}_g{grp}'
+        for phase in ('selection', 'processes', 'destinations'):
+            flatten_phase(row, prefix, it, phase)
 
 
 def flatten_session(s):
     row = {}
 
     # ── PARTICIPANT INFO ───────────────────────────────────────────────────────
-    row['participant_id']  = s.get('participant_id', '')
-    row['condition']       = s.get('condition', 'web')
-    row['mode']            = s.get('mode', 'error_based')
-    row['language']        = s.get('language', '')
-    row['set']             = s.get('set', '')
-    row['created_at']      = s.get('created_at', '')
-    row['completed_at']    = s.get('completed_at', '')
+    row['participant_id'] = s.get('participant_id', '')
+    row['condition']      = s.get('condition', 'web')
+    row['mode']           = s.get('mode', 'error_based')
+    row['language']       = s.get('language', '')
+    row['set']            = s.get('set', '')
+    row['created_at']     = s.get('created_at', '')
+    row['completed_at']   = s.get('completed_at', '')
 
     # ── DEMOGRAPHICS ──────────────────────────────────────────────────────────
     demo = s.get('demographics', {}).get('answers', {})
@@ -80,69 +142,10 @@ def flatten_session(s):
     row['train_duration_sec']    = duration_sec(s.get('game_started_at'), s.get('train_completed_at'))
     row['test_duration_sec']     = duration_sec(s.get('test_started_at'), s.get('completed_at'))
 
-    # ── GAME SCORES ───────────────────────────────────────────────────────────
-    # Iterations are stored with keys "1","2","3" for train (Set A) and test (Set B)
-    # We separate them by the session's set field and phase field recorded per group
+    # ── GAME SCORES: TRAIN then TEST ─────────────────────────────────────────
     iters = s.get('iterations', {})
-
-    # Sort groups by key
-    sorted_iters = sorted(iters.items(), key=lambda x: int(x[0]))
-
-    # Determine which groups are train vs test
-    # Train: first 3 groups in Set A, Test: next 3 in Set B
-    # In practice all iterations share the same keys 1-3 but set changes
-    # We'll label them by order: first 3 = train, next 3 = test
-    train_iters = sorted_iters[:3]
-    test_iters  = sorted_iters[3:] if len(sorted_iters) > 3 else []
-    # If only 3 groups, check phase stored in session
-    if len(sorted_iters) == 3:
-        # Check if test phase was started — if so label as test
-        if s.get('test_started_at'):
-            test_iters  = sorted_iters
-            train_iters = []
-
-    for label, group_list in [('train', train_iters), ('test', test_iters)]:
-        total_sel = total_proc = total_dest = 0
-        total_rule_consult = 0
-        total_rule_time_ms = 0
-
-        for i, (grp_key, it) in enumerate(group_list, 1):
-            grp = it.get('group', int(grp_key))
-            prefix = f'{label}_g{grp}'
-
-            for phase in ('selection', 'processes', 'destinations'):
-                ph  = it.get(phase, {})
-                att = ph.get('attempts', [])
-                if att:
-                    a = att[-1]  # single attempt
-                    sc = safe_int(a.get('score', 0)) or 0
-                    row[f'{prefix}_{phase}_score']    = sc
-                    row[f'{prefix}_{phase}_time_sec'] = a.get('phase_time_sec')
-                    rc = a.get('rule_metrics', {})
-                    if isinstance(rc, dict):
-                        row[f'{prefix}_{phase}_rule_consult'] = rc.get('total_consultations', 0)
-                        row[f'{prefix}_{phase}_rule_time_sec']= round(rc.get('total_time_ms',0)/1000,1)
-                        total_rule_consult += rc.get('total_consultations', 0)
-                        total_rule_time_ms += rc.get('total_time_ms', 0)
-                    if phase == 'selection':
-                        row[f'{prefix}_kendall_tau']         = a.get('kendall_tau')
-                        ps = a.get('phase_score', {})
-                        if isinstance(ps, dict):
-                            row[f'{prefix}_phase_score']         = ps.get('total')
-                            row[f'{prefix}_tier_ordering_score'] = ps.get('tier_ordering_score')
-                            row[f'{prefix}_within_tier_score']   = ps.get('within_tier_score')
-                    if phase == 'selection':   total_sel  += sc
-                    if phase == 'processes':   total_proc += sc
-                    if phase == 'destinations':total_dest += sc
-
-        max_score = len(group_list) * 5
-        row[f'{label}_sel_total']       = total_sel
-        row[f'{label}_proc_total']      = total_proc
-        row[f'{label}_dest_total']      = total_dest
-        row[f'{label}_total']           = total_sel + total_proc + total_dest
-        row[f'{label}_max']             = max_score * 3
-        row[f'{label}_rule_consult']    = total_rule_consult
-        row[f'{label}_rule_time_sec']   = round(total_rule_time_ms / 1000, 1)
+    flatten_label(row, 'train', iters)
+    flatten_label(row, 'test',  iters)
 
     # ── NASA-TLX ──────────────────────────────────────────────────────────────
     nasa = s.get('nasa_tlx', {}).get('answers', {})
@@ -158,10 +161,9 @@ def flatten_session(s):
                'AE':['AE1','AE2','AE3'],'RW':['RW1','RW2','RW3']}
 
     row['ues_presentation_order'] = ','.join(ues.get('order', []))
-    all_ues_scores = []
+    all_ues = []
     for item_id in ['FA1','FA2','FA3','PU1','PU2','PU3','AE1','AE2','AE3','RW1','RW2','RW3']:
-        v = ues_ans.get(item_id)
-        row[f'ues_{item_id}'] = v
+        row[f'ues_{item_id}'] = ues_ans.get(item_id)
     for dim, items in DIMS.items():
         scores = []
         for item in items:
@@ -169,14 +171,12 @@ def flatten_session(s):
             if v is not None:
                 v = int(v)
                 if item in REVERSE: v = 6 - v
-                scores.append(v)
-                all_ues_scores.append(v)
-        row[f'ues_{dim}_mean'] = round(sum(scores)/len(scores),3) if scores else None
-    row['ues_total_mean'] = round(sum(all_ues_scores)/len(all_ues_scores),3) if all_ues_scores else None
+                scores.append(v); all_ues.append(v)
+        row[f'ues_{dim}_mean'] = round(sum(scores)/len(scores), 3) if scores else None
+    row['ues_total_mean'] = round(sum(all_ues)/len(all_ues), 3) if all_ues else None
 
     # ── QUESTIONNAIRE ─────────────────────────────────────────────────────────
-    q_ans = s.get('questionnaire', {}).get('answers', {})
-    for k, v in q_ans.items():
+    for k, v in s.get('questionnaire', {}).get('answers', {}).items():
         row[f'q_{k}'] = v
 
     return row
@@ -184,14 +184,13 @@ def flatten_session(s):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--db',  default='data/sessions.db',
-                        help='Path to sessions.db or sessions.json')
-    parser.add_argument('--out', default='.', help='Output directory')
+    parser.add_argument('--db',  default='data/sessions.db')
+    parser.add_argument('--out', default='.')
     args = parser.parse_args()
 
     if not os.path.exists(args.db):
         print(f"[ERROR] File not found: {args.db}")
-        print("  Download with: curl -u admin:PASSWORD https://YOUR-APP.railway.app/api/sessions > sessions.json")
+        print("  Download: curl -u admin:triage2024 https://YOUR-APP.railway.app/api/sessions > sessions.json")
         return
 
     print(f"Loading from: {args.db}")
@@ -199,18 +198,12 @@ def main():
     if not sessions:
         print("  No sessions found.")
         return
-    print(f"  {len(sessions)} session(s) found")
+    print(f"  {len(sessions)} session(s)")
 
     rows = [flatten_session(s) for s in sessions]
 
-    # Collect all possible columns (union across all rows)
-    all_keys = []
-    seen = set()
-    for row in rows:
-        for k in row:
-            if k not in seen:
-                all_keys.append(k)
-                seen.add(k)
+    # Collect all columns preserving insertion order
+    all_keys = list(dict.fromkeys(k for row in rows for k in row))
 
     os.makedirs(args.out, exist_ok=True)
     out_path = os.path.join(args.out, 'triage_data.csv')
@@ -224,7 +217,7 @@ def main():
     print("\nQuick pandas:")
     print("  import pandas as pd")
     print("  df = pd.read_csv('triage_data.csv')")
-    print("  df.groupby('mode')['test_total'].mean()")
+    print("  df.groupby('mode')[['train_total','test_total']].mean()")
 
 if __name__ == '__main__':
     main()

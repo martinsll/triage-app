@@ -37,15 +37,18 @@ h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
   <p class="sub">Participant: {{ sess.participant_id }} · Set {{ sess.set }} · {{ sess.created_at[:10] }}</p>
   {% endif %}
 
-  {% set total_sel = 0 %}{% set total_proc = 0 %}{% set total_dest = 0 %}
+  {% set ns = namespace(sel=0, proc=0, dest=0) %}
   {% for grp_key, it in sess.iterations.items() %}
-    {% set sel_score = it.selection.final_score or it.selection.attempts[-1].score if it.selection.attempts else '0/5' %}
-    {% set proc_score = it.processes.final_score or it.processes.attempts[-1].score if it.processes.attempts else '0/5' %}
-    {% set dest_score = it.destinations.final_score or it.destinations.attempts[-1].score if it.destinations.attempts else '0/5' %}
-    {% set total_sel = total_sel + sel_score.split('/')[0]|int %}
-    {% set total_proc = total_proc + proc_score.split('/')[0]|int %}
-    {% set total_dest = total_dest + dest_score.split('/')[0]|int %}
+    {% set sel_score = it.selection.final_score or (it.selection.attempts[-1].score if it.selection.attempts else '0/5') %}
+    {% set proc_score = it.processes.final_score or (it.processes.attempts[-1].score if it.processes.attempts else '0/5') %}
+    {% set dest_score = it.destinations.final_score or (it.destinations.attempts[-1].score if it.destinations.attempts else '0/5') %}
+    {% set ns.sel = ns.sel + sel_score.split('/')[0]|int %}
+    {% set ns.proc = ns.proc + proc_score.split('/')[0]|int %}
+    {% set ns.dest = ns.dest + dest_score.split('/')[0]|int %}
   {% endfor %}
+  {% set total_sel = ns.sel %}
+  {% set total_proc = ns.proc %}
+  {% set total_dest = ns.dest %}
   {% set total = total_sel + total_proc + total_dest %}
   {% set max_each = sess.groups|length * 5 %}
   {% set max_total = max_each * 3 %}
