@@ -147,22 +147,22 @@
   <!-- SECTION 3 -->
   <div class="section-label">{% if language == 'es' %}Preguntas abiertas{% else %}Open-ended{% endif %}</div>
 
-  <div class="question" id="q8">
+  <div class="question" id="q7">
     <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 7</div>
     <div class="q-text">{% if language == 'es' %}¿Cuál fue el aspecto más difícil de la tarea para ti?{% else %}What was the most difficult aspect of the task for you?{% endif %}</div>
+    <textarea data-q="q7" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
+  </div>
+
+  <div class="question" id="q8">
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 8</div>
+    <div class="q-text">{% if language == 'es' %}¿Qué te habría ayudado a aprender las reglas de triaje de forma más efectiva?{% else %}What would have helped you learn the triage rules more effectively?{% endif %}</div>
     <textarea data-q="q8" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
   </div>
 
   <div class="question" id="q9">
-    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 8</div>
-    <div class="q-text">{% if language == 'es' %}¿Qué te habría ayudado a aprender las reglas de triaje de forma más efectiva?{% else %}What would have helped you learn the triage rules more effectively?{% endif %}</div>
-    <textarea data-q="q9" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
-  </div>
-
-  <div class="question" id="q10">
     <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 9</div>
     <div class="q-text">{% if language == 'es' %}¿Algún otro comentario sobre el experimento?{% else %}Any other comments or feedback about the experiment?{% endif %}</div>
-    <textarea data-q="q10" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
+    <textarea data-q="q9" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
   </div>
 
   <button class="submit-btn" onclick="submitQuestionnaire()">
