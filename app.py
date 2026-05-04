@@ -140,6 +140,7 @@ def ensure_iteration(sess, group, phase="train"):
             "processes":    {"attempts": [], "final_score": None},
             "destinations": {"attempts": [], "final_score": None},
             "phase": phase,
+            "phase": phase,
             "completed": False
         }
     return sess["iterations"][key]
@@ -618,6 +619,16 @@ def api_record_correction():
         attempts[-1]["correction"] = correction
     save_session(sess)
     return jsonify({"ok": True})
+
+
+@app.route("/api/clear_sessions", methods=["POST"])
+@require_admin
+def api_clear_sessions():
+    conn = get_db()
+    conn.execute("DELETE FROM sessions")
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "message": "All sessions deleted"})
 
 @app.route("/admin")
 @require_admin
