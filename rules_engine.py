@@ -248,6 +248,12 @@ def patient_for_client(p: dict, set_label: str, include_answers: bool = False) -
         "risk":          r,
         "explanation_en": p.get("explanation_en", ""),
         "explanation_es": p.get("explanation_es", ""),
+        "exp_selection_en":   p.get("exp_selection_en",  p.get("explanation_en", "")),
+        "exp_selection_es":   p.get("exp_selection_es",  p.get("explanation_es", "")),
+        "exp_processes_en":   p.get("exp_processes_en",  p.get("explanation_en", "")),
+        "exp_processes_es":   p.get("exp_processes_es",  p.get("explanation_es", "")),
+        "exp_destination_en": p.get("exp_destination_en", p.get("explanation_en", "")),
+        "exp_destination_es": p.get("exp_destination_es", p.get("explanation_es", "")),
     }
     if include_answers:
         d["correct_processes"]  = correct_processes_for(set_label, p["pid"])
