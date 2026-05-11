@@ -50,11 +50,10 @@
 
   <button class="start-btn" onclick="startSession()">Start →</button>
 
-  <!-- Admin view accessible at /admin (password protected) -->
+  <div class="admin-link"><a href="/admin">Experimenter view ↗</a></div>
 </div>
 
 <script>
-const MODE = "{{ mode|default('error_based') }}";
 document.querySelectorAll('#lang-pills .pill').forEach(p => {
   p.addEventListener('click', () => {
     document.querySelectorAll('#lang-pills .pill').forEach(x => x.classList.remove('active'));
@@ -74,7 +73,7 @@ async function startSession(){
       body: JSON.stringify({
         participant_id: '{{ participant_id }}',
         language: getLang(),
-        mode: MODE
+        mode: '{{ mode }}'
       })
     });
     const data = await res.json();

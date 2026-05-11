@@ -12,7 +12,7 @@ Then open: http://localhost:5000
 """
 
 import os, json, sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, Response
 from rules_engine import (
@@ -95,7 +95,7 @@ def load_session(session_id):
     return json.loads(row["data"]) if row else None
 
 def save_session(data):
-    now = datetime.now().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     with get_db() as conn:
         conn.execute("""
             INSERT INTO sessions (session_id, data, created_at, updated_at)
@@ -120,14 +120,14 @@ def get_next_participant_number():
     return row["n"] + 1
 
 def init_session_data(participant_id, set_label, groups, language):
-    sid = f"{participant_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    sid = f"{participant_id}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
     return {
         "session_id": sid,
         "participant_id": participant_id,
         "set": set_label,
         "groups": groups,
         "language": language,
-        "created_at": datetime.now().isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
         "completed_at": None,
         "iterations": {}
     }
@@ -139,7 +139,6 @@ def ensure_iteration(sess, group, phase="train"):
             "selection":    {"attempts": [], "final_score": None, "questions_asked": 0},
             "processes":    {"attempts": [], "final_score": None},
             "destinations": {"attempts": [], "final_score": None},
-            "phase": phase,
             "phase": phase,
             "phase": phase,
             "completed": False
@@ -189,7 +188,10 @@ def api_start():
     session["language"]          = language
     session["current_group_idx"] = 0
     session["phase"]             = "train"
-    session["mode"]              = data.get("mode", "error_based")
+    mode = data.get("mode", "error_based")
+    sess["mode"] = mode
+    save_session(sess)
+    session["mode"]              = mode
     session["after_demographics"] = "/game"
     session["after_ues"]          = "/nasa_tlx"
     session["after_nasa_tlx"]     = "/questionnaire"
@@ -206,7 +208,7 @@ def api_start_test():
         return jsonify({"ok": False}), 400
 
     sess["phase"] = "test"
-    sess["test_started_at"] = datetime.now().isoformat()
+    sess["test_started_at"] = datetime.now(timezone.utc).isoformat()
     save_session(sess)
 
     session["set"]               = "B"
@@ -238,7 +240,7 @@ def api_submit_questionnaire():
         return jsonify({"ok": False}), 400
     sess["questionnaire"] = {
         "answers":      data.get("answers", {}),
-        "submitted_at": datetime.now().isoformat(),
+        "submitted_at": datetime.now(timezone.utc).isoformat(),
     }
     save_session(sess)
     return jsonify({"ok": True})
@@ -266,7 +268,7 @@ def api_record_reading():
         "rules_time_sec":        data.get("rules_time_sec"),
         "total_time_sec":        (data.get("instructions_time_sec", 0) +
                                   data.get("rules_time_sec", 0)),
-        "completed_at":          datetime.now().isoformat(),
+        "completed_at":          datetime.now(timezone.utc).isoformat(),
     }
     save_session(sess)
     return jsonify({"ok": True})
@@ -323,9 +325,8 @@ def api_validate():
     if not sess:
         return jsonify({"error": "session not found"}), 404
 
-    game_phase = session.get("phase", "train")
-    it = ensure_iteration(sess, group, game_phase)
-    timestamp = datetime.now().isoformat()
+    it = ensure_iteration(sess, group)
+    timestamp = datetime.now(timezone.utc).isoformat()
 
     if phase == "selection":
         lang = session.get("language","en")
@@ -423,7 +424,7 @@ def api_complete_group():
         game_phase = session.get("phase", "train")
         it = ensure_iteration(sess, group, game_phase)
         it["completed"] = True
-        it["completed_at"] = datetime.now().isoformat()
+        it["completed_at"] = datetime.now(timezone.utc).isoformat()
         save_session(sess)
 
     idx    = session.get("current_group_idx", 0)
@@ -435,12 +436,12 @@ def api_complete_group():
         if sess:
             if phase == "train":
                 # Train done → go to transition screen
-                sess["train_completed_at"] = datetime.now().isoformat()
+                sess["train_completed_at"] = datetime.now(timezone.utc).isoformat()
                 save_session(sess)
                 return jsonify({"done": True, "next": "transition"})
             else:
                 # Test done → go to results
-                sess["completed_at"] = datetime.now().isoformat()
+                sess["completed_at"] = datetime.now(timezone.utc).isoformat()
                 save_session(sess)
                 return jsonify({"done": True, "next": "ues"})
     return jsonify({"done": False, "next_group": groups[idx + 1]})
@@ -453,9 +454,9 @@ def api_record_game_start():
     if sess:
         phase = session.get("phase", "train")
         if phase == "train" and not sess.get("game_started_at"):
-            sess["game_started_at"] = datetime.now().isoformat()
+            sess["game_started_at"] = datetime.now(timezone.utc).isoformat()
         elif phase == "test":
-            sess["test_started_at"] = datetime.now().isoformat()
+            sess["test_started_at"] = datetime.now(timezone.utc).isoformat()
         save_session(sess)
     return jsonify({"ok": True})
 
@@ -487,7 +488,7 @@ def api_submit_demographics():
         return jsonify({"ok": False}), 400
     sess["demographics"] = {
         "answers":      data.get("answers", {}),
-        "submitted_at": datetime.now().isoformat(),
+        "submitted_at": datetime.now(timezone.utc).isoformat(),
     }
     save_session(sess)
     return jsonify({"ok": True, "next": session.get("after_demographics", "/game")})
@@ -508,7 +509,7 @@ def api_submit_ues():
     sess["ues_questionnaire"] = {
         "answers":      data.get("answers", {}),
         "order":        data.get("order", []),
-        "submitted_at": datetime.now().isoformat(),
+        "submitted_at": datetime.now(timezone.utc).isoformat(),
     }
     save_session(sess)
     return jsonify({"ok": True, "next": session.get("after_ues", "/nasa_tlx")})
@@ -528,7 +529,7 @@ def api_submit_nasa_tlx():
         return jsonify({"ok": False}), 400
     sess["nasa_tlx"] = {
         "answers":      data.get("answers", {}),
-        "submitted_at": datetime.now().isoformat(),
+        "submitted_at": datetime.now(timezone.utc).isoformat(),
     }
     save_session(sess)
     return jsonify({"ok": True, "next": session.get("after_nasa_tlx", "/questionnaire")})
@@ -547,11 +548,11 @@ def api_start_robot():
     language       = data.get("language", "en")
 
     sess = {
-        "session_id":     f"{participant_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        "session_id":     f"{participant_id}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
         "participant_id": participant_id,
         "condition":      "robot",
         "language":       language,
-        "created_at":     datetime.now().isoformat(),
+        "created_at":     datetime.now(timezone.utc).isoformat(),
         "completed_at":   None,
         "iterations":     {},
     }
