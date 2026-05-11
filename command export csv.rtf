@@ -1,18 +1,18 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2580
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Roman;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red96\green168\blue255;\red229\green232\blue236;
-\red0\green0\blue0;\red0\green0\blue0;\red251\green0\blue7;}
-{\*\expandedcolortbl;;\cssrgb\c0\c1\c1;\cssrgb\c44173\c72453\c100000;\cssrgb\c91876\c92662\c94116;
-\cssrgb\c0\c0\c0;\cssrgb\c0\c1\c1;\cssrgb\c100000\c12195\c0;}
+{\colortbl;\red255\green255\blue255;\red95\green167\blue255;\red0\green0\blue0;\red229\green231\blue236;
+\red0\green0\blue0;\red229\green232\blue236;\red251\green0\blue7;}
+{\*\expandedcolortbl;;\cssrgb\c43922\c72157\c100000;\cssrgb\c0\c0\c0;\cssrgb\c91765\c92549\c94118;
+\cssrgb\c0\c1\c1;\cssrgb\c91876\c92662\c94116;\cssrgb\c100000\c12195\c0;}
 \paperw11900\paperh16840\margl1440\margr1440\vieww25400\viewh13500\viewkind0
 \deftab720
 \pard\pardeftab720\partightenfactor0
 
 \f0\fs24 \cf2 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec3 curl\cf2 \strokec4  -u admin:triage2024 https://web-production-b26bff.up.railway.app/api/sessions > sessions.json\
+\outl0\strokewidth0 \strokec2 curl\cf3 \strokec3  -u admin:triage2024 https://web-production-b26bff.up.railway.app/api/sessions \cf4 \strokec4 >\cf3 \strokec3  sessions.json \cf5 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \
 \pard\pardeftab720\partightenfactor0
-\cf2 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 python analyze_sessions.py --db sessions.json --out ./results/\
+\cf5 python analyze_sessions.py --db sessions.json --out ./results/\
 \
 \
 \
@@ -31,5 +31,7 @@
 \
 \
 \
-\cf6 \cb7 PER BORRAR RESULTATS!!\
-\cf2 \cb1 curl -u admin:triage2024 -X POST https://web-production-b26bff.up.railway.app/api/clear_sessions}
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb7 PER BORRAR RESULTATS!!\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb1 curl -u admin:triage2024 -X POST https://web-production-b26bff.up.railway.app/api/clear_sessions}
