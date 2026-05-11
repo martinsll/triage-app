@@ -432,8 +432,10 @@ async function loadGroup(){
 function openRules(){
   STATE.ruleOpenedAt=now();
   document.getElementById('rules-overlay').style.display='block';
-  document.getElementById('rules-backdrop').style.display='block';
-  document.getElementById('main-content').style.pointerEvents='none';
+  if(STATE.gamePhase==='test'){
+    document.getElementById('rules-backdrop').style.display='block';
+    document.getElementById('main-content').style.pointerEvents='none';
+  }
 }
 function closeRules(){
   if(STATE.ruleOpenedAt){
@@ -507,11 +509,13 @@ function isWarnVital(key,val){
   return false;
 }
 const VITAL_UNITS={hr:' bpm',bp:' mmHg',spo2:'%',rr:'/min',temp:'°C'};
-const VITAL_LABELS={hr:'HR',bp:'BP',spo2:'SpO2',rr:'RR',temp:'Temp'};
+const VITAL_LABELS_EN={hr:'HR',bp:'BP',spo2:'SpO2',rr:'RR',temp:'Temp'};
+const VITAL_LABELS_ES={hr:'FC',bp:'TA',spo2:'SpO2',rr:'FR',temp:'Temp'};
 
 function vitalRow(key,val){
   const w=isWarnVital(key,val);
-  return`<div class="vital-row"><span>${VITAL_LABELS[key]}</span><span class="${w?'vital-warn':''}">${val}${VITAL_UNITS[key]}</span></div>`;
+  const VL=LANG==='es'?VITAL_LABELS_ES:VITAL_LABELS_EN;
+  return`<div class="vital-row"><span>${VL[key]}</span><span class="${w?'vital-warn':''}">${val}${VITAL_UNITS[key]}</span></div>`;
 }
 
 const COND_BG={
@@ -524,7 +528,7 @@ function renderPatientCard(p,opts={}){
   const cls=['patient-card',selected?'selected':'',assigned?'assigned':''].filter(Boolean).join(' ');
   const slotBadge=slot?`<div class="slot-badge">${slot}</div>`:'';
   const correctBadge=showCorrect!=null?(correct?'<div class="correct-badge">✓</div>':'<div class="correct-badge" style="background:#FCEBEB;color:#A32D2D">✗</div>'):'';
-  const mobShort=p.mobility==='Non-Ambulatory'?'Non-Amb':'Amb';
+  const mobShort=tMob(p.mobility);
   return`
     <div class="${cls}" data-pid="${p.pid}" onclick="handleCardClick('${p.pid}')">
       ${slotBadge}${correctBadge}
@@ -538,7 +542,7 @@ function renderPatientCard(p,opts={}){
         ${vitalRow('rr',p.rr)}${vitalRow('temp',p.temp)}
       </div>
       <div class="card-footer">
-        <span>${p.onset}</span><span>${p.alertness}</span><span>${mobShort}</span>
+        <span>${tOnset(p.onset)}</span><span>${tAlert(p.alertness)}</span><span>${mobShort}</span>
       </div>
     </div>`;
 }
@@ -699,7 +703,14 @@ async function sendCorrectionData(phase){
 
 // ── PROCESSES PHASE ───────────────────────────────────────────────────────────
 function vitalMini(p){
-  const keys=[['hr','HR',p.hr,' bpm'],['bp','BP',p.bp,' mmHg'],['spo2','SpO2',p.spo2,'%'],['rr','RR',p.rr,'/min'],['temp','Temp',p.temp,'°C']];
+  const es=LANG==='es';
+  const keys=[
+    ['hr',  es?'FC':'HR',  p.hr,  es?' lpm':' bpm'],
+    ['bp',  es?'TA':'BP',  p.bp,  ' mmHg'],
+    ['spo2','SpO2',        p.spo2,'%'],
+    ['rr',  es?'FR':'RR',  p.rr,  '/min'],
+    ['temp','Temp',        p.temp,'°C']
+  ];
   return keys.map(([k,l,v,u])=>{
     const w=isWarnVital(k,v);
     return`<span style="margin-right:8px"><span style="color:#aaa">${l} </span><span class="${w?'vital-inline-warn':''}">${v}${u}</span></span>`;
@@ -725,7 +736,7 @@ function renderProcesses(){
           ${riskTag(p.risk)}
         </div>
         <div class="patient-mini">${vitalMini(p)}</div>
-        <div style="font-size:11px;color:#aaa;margin-top:2px">${p.alertness} · ${p.onset} · ${p.mobility==='Non-Ambulatory'?'Non-Amb':'Ambulatory'} · ${tComp(p.companion)} · ${tCoop(p.cooperation)}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px">${tAlert(p.alertness)} · ${tOnset(p.onset)} · ${tMob(p.mobility)} · ${tComp(p.companion)} · ${tCoop(p.cooperation)}</div>
       </td>
       <td>
         <div class="proc-checks" id="procs-${pid}">
@@ -836,10 +847,10 @@ function renderDestinations(){
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
           <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${p.condition}</span>
           ${riskTag(p.risk)}
-          <span style="font-size:11px;color:#888">${p.onset}</span>
+          <span style="font-size:11px;color:#888">${tOnset(p.onset)}</span>
         </div>
         <div class="patient-mini">${vitalMini(p)}</div>
-        <div style="font-size:11px;color:#aaa;margin-top:2px">${p.alertness} · ${p.mobility==='Non-Ambulatory'?'Non-Amb':'Ambulatory'} · <strong style="color:#555">${p.companion}</strong></div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px">${tAlert(p.alertness)} · ${tMob(p.mobility)} · <strong style="color:#555">${tComp(p.companion)}</strong></div>
       </td>
       <td>
         <select onchange="setDest('${pid}',this.value)">
@@ -926,9 +937,13 @@ function getExpText(p){
 
 function guidedHintBox(text){
   if(!text) return '';
+  if(STATE.gamePhase==='test') return '';
+  const label = LANG==='es'
+    ? `<div style="font-size:11px;color:#888;margin-bottom:6px">Sugerencia — realiza la acción indicada para avanzar al siguiente paso.</div>`
+    : `<div style="font-size:11px;color:#888;margin-bottom:6px">Tip — perform the action below to move to the next step.</div>`;
   return `<div style="background:#F0F7FF;border:0.5px solid #B0CDED;border-radius:8px;
     padding:12px 16px;font-size:13px;color:#185FA5;line-height:1.6;margin-bottom:16px">
-    💡 ${text}</div>`;
+    ${label}💡 ${text}</div>`;
 }
 
 // GUIDED SELECTION
@@ -941,13 +956,15 @@ function renderGuidedSelection(){
 
 function renderGuidedSelectionState(){
   const step=STATE.guidedStep;
-  if(step>=5){autoSubmitGuidedSelection();return;}
+  const isTest=STATE.gamePhase==='test';
+  if(!isTest && step>=5){autoSubmitGuidedSelection();return;}
   const targetPid=STATE.correctOrder[step];
   const targetP=STATE.patients.find(p=>p.pid===targetPid);
   const hint=`${LANG==='es'?'Ranura':'Slot'} ${step+1}: ${getExpText(targetP)}`;
   const assignedPids=new Set(Object.values(STATE.selection));
   const unassigned=STATE.patients.filter(p=>!assignedPids.has(p.pid))
     .sort((a,b)=>parseInt(a.pid.slice(1))-parseInt(b.pid.slice(1)));
+  const allPlaced=Object.keys(STATE.selection).length===5;
 
   let html=`<div class="phase-banner">
     <div class="phase-num">1</div>
@@ -970,6 +987,7 @@ function renderGuidedSelectionState(){
   unassigned.forEach(p=>{html+=renderPatientCard(p,{selected:STATE.selectedCard===p.pid});});
   if(unassigned.length===0) html+=`<p style="font-size:12px;color:#888">${T.all_assigned}</p>`;
   html+=`</div>`;
+  if(isTest && allPlaced) html+=`<div class="btn-row"><button class="btn btn-primary" onclick="submitSelection()">${T.btn_validate_sel}</button></div>`;
   document.getElementById('main-content').innerHTML=html;
 }
 
@@ -983,7 +1001,11 @@ function handleGuidedSlotClick(slot){
     Object.keys(STATE.selection).forEach(s=>{if(STATE.selection[s]===STATE.selectedCard)delete STATE.selection[s];});
     STATE.selection[slot]=STATE.selectedCard;
     STATE.selectedCard=null;
-    // Check advance only if correct patient placed in correct slot
+    // In test mode: free placement, no auto-advance
+    if(STATE.gamePhase==='test'){
+      renderGuidedSelectionState();return;
+    }
+    // In train mode: check advance only if correct patient placed in correct slot
     const targetSlot=STATE.guidedStep+1;
     const targetPid=STATE.correctOrder[STATE.guidedStep];
     if(slot===targetSlot && STATE.selection[slot]===targetPid){
@@ -1033,12 +1055,14 @@ function renderGuidedProcessState(){
     const procs=STATE.processes[ppid]||[];
     const isActive=idx===step;
     const disabled=idx!==step;
+    const vitalsProc = (isActive || STATE.gamePhase==='test') ? `<div class="patient-mini">${vitalMini(pp)}</div><div style="font-size:11px;color:#aaa;margin-top:2px">${tAlert(pp.alertness)} · ${tOnset(pp.onset)} · ${tMob(pp.mobility)} · ${tComp(pp.companion)} · ${tCoop(pp.cooperation)}</div>` : '';
     rows+=`<tr style="${isActive?'background:#F8FBFF':''}">
       <td style="padding:8px 12px;border:0.5px solid #e0ddd5;font-size:12px">
         <span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;
           background:${COND_COLORS[pp.condition]}22;color:${COND_COLORS[pp.condition]}">${tCond(pp.condition)}</span>
-        <span class="risk-tag risk-${pp.risk}" style="margin-left:4px">${tRisk(pp.risk)}</span>
+        ${riskTag(pp.risk)}
         <div style="font-size:11px;color:#555;margin-top:2px">${pp.name}</div>
+        ${vitalsProc}
       </td>
       <td style="padding:8px 12px;border:0.5px solid #e0ddd5">
         ${PROCESSES.map(proc=>{
@@ -1048,17 +1072,15 @@ function renderGuidedProcessState(){
             style="${disabled?'opacity:0.4;pointer-events:none;cursor:default':''}"
             onclick="${disabled?'':'toggleGuidedProc(\''+ppid+'\',\''+proc+'\')'}">${tProc(proc)}</span>`;
         }).join('')}
+        ${isActive && correct.length===0 ? `<div style="margin-top:8px;padding:4px 8px;border-radius:4px;background:#EAF3DE;color:#3B6D11;font-size:11px;font-weight:500;display:inline-block">${LANG==='es'?'✓ Sin procesos adicionales':'✓ No additional processes'}</div>${STATE.gamePhase!=='test'?`<button class="btn btn-primary" style="margin-top:8px;font-size:11px;padding:4px 10px" onclick="confirmNoProcesses()">${LANG==='es'?'Confirmar':'Confirm'}</button>`:''}` : ''}
       </td>
     </tr>`;
   });
 
-  const noProcBtn = noProcsNeeded ? `
-    <div style="margin-top:12px">
-      <button class="btn btn-primary" onclick="confirmNoProcesses()">
-        ${LANG==='es'?'✓ Sin procesos adicionales':'✓ No additional processes'}
-      </button>
-    </div>` : '';
+  const noProcBtn = '';  // replaced by per-row indicator
 
+  const isTestProc=STATE.gamePhase==='test';
+  const validateBtnProc=isTestProc?`<div class="btn-row"><button class="btn btn-primary" onclick="submitProcesses()">${T.btn_validate_proc}</button></div>`:'';
   document.getElementById('main-content').innerHTML=`
     <div class="phase-banner">
       <div class="phase-num">2</div>
@@ -1069,7 +1091,8 @@ function renderGuidedProcessState(){
     <table class="proc-table">
       <thead><tr><th>${T.patient_col}</th><th>${T.proc_col}</th></tr></thead>
       <tbody>${rows}</tbody>
-    </table>`;
+    </table>
+    ${validateBtnProc}`;
 }
 
 function toggleGuidedProc(pid,proc){
@@ -1084,7 +1107,7 @@ function toggleGuidedProc(pid,proc){
   const correct=(STATE.correctProcesses&&STATE.correctProcesses[targetPid])||[];
   const actual=[...(STATE.processes[targetPid]||[])].sort();
   const exp=[...correct].sort();
-  if(JSON.stringify(actual)===JSON.stringify(exp)){
+  if(STATE.gamePhase!=='test' && JSON.stringify(actual)===JSON.stringify(exp)){
     STATE.guidedStep++;
     if(STATE.guidedStep>=5) autoSubmitGuidedProcesses();
     else renderGuidedProcessState();
@@ -1133,12 +1156,14 @@ function renderGuidedDestState(){
     const cur=STATE.destinations[ppid]||'';
     const isActive=idx===step;
     const disabled=idx!==step;
+    const vitalsDest = (isActive || STATE.gamePhase==='test') ? `<div class="patient-mini">${vitalMini(pp)}</div><div style="font-size:11px;color:#aaa;margin-top:2px">${tAlert(pp.alertness)} · ${tOnset(pp.onset)} · ${tMob(pp.mobility)} · ${tComp(pp.companion)} · ${tCoop(pp.cooperation)}</div>` : '';
     rows+=`<tr style="${isActive?'background:#F8FBFF':''}">
       <td style="padding:8px 12px;border:0.5px solid #e0ddd5;font-size:12px">
         <span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;
           background:${COND_COLORS[pp.condition]}22;color:${COND_COLORS[pp.condition]}">${tCond(pp.condition)}</span>
-        <span class="risk-tag risk-${pp.risk}" style="margin-left:4px">${tRisk(pp.risk)}</span>
+        ${riskTag(pp.risk)}
         <div style="font-size:11px;color:#555;margin-top:2px">${pp.name}</div>
+        ${vitalsDest}
       </td>
       <td style="padding:8px 12px;border:0.5px solid #e0ddd5">
         <select ${disabled?'disabled style="opacity:0.4"':''}
@@ -1151,6 +1176,8 @@ function renderGuidedDestState(){
     </tr>`;
   });
 
+  const isTestDest=STATE.gamePhase==='test';
+  const validateBtnDest=isTestDest?`<div class="btn-row"><button class="btn btn-primary" onclick="submitDestinations()">${T.btn_validate_dest}</button></div>`:'';
   document.getElementById('main-content').innerHTML=`
     <div class="phase-banner">
       <div class="phase-num">3</div>
@@ -1160,7 +1187,8 @@ function renderGuidedDestState(){
     <table class="proc-table">
       <thead><tr><th>${T.patient_col}</th><th>${T.dest_col}</th></tr></thead>
       <tbody>${rows}</tbody>
-    </table>`;
+    </table>
+    ${validateBtnDest}`;
 }
 
 function handleGuidedDestChange(pid,val){
@@ -1169,7 +1197,7 @@ function handleGuidedDestChange(pid,val){
   const targetPid=STATE.correctOrder[step];
   if(pid!==targetPid) return;
   const correctDest=(STATE.correctDestinations&&STATE.correctDestinations[targetPid])||'';
-  if(val===correctDest){
+  if(STATE.gamePhase!=='test' && val===correctDest){
     STATE.guidedStep++;
     if(STATE.guidedStep>=5) autoSubmitGuidedDestinations();
     else renderGuidedDestState();

@@ -77,12 +77,31 @@ tr:nth-child(even) td{background:#f9f8f6}
     <div class="card">
       {% if language == 'es' %}
       <h1>Bienvenido al Entrenamiento de Triaje</h1>
-      <p class="lead">En este ejercicio triará grupos de pacientes simulados. Tomará tres tipos de decisiones para cada grupo de cinco pacientes.</p>
+      <p class="lead">Eres un aprendiz en la sala de emergencias de un hospital. Vas a tener grupos de pacientes generados para este ejercicio. Los grupos son de cinco pacientes y vas a tener una fase de entrenamiento y una fase de prueba. Para cada grupo de pacientes, vas a tener 3 fases en las que tomarás distintas decisiones sobre qué hacer con cada paciente. Cada tarjeta de paciente muestra un conjunto de valores clínicos: frecuencia cardíaca, presión arterial, saturación de oxígeno, frecuencia respiratoria, temperatura, nivel de conciencia, inicio de síntomas, movilidad y contexto social.</p>
+      <h2>Información del paciente en cada tarjeta</h2>
+      <table>
+        <thead><tr><th>Variable</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><strong>FC</strong></td><td>Frecuencia cardíaca en lpm — valor medido</td></tr>
+          <tr><td><strong>TA</strong></td><td>Tensión arterial en mmHg — valor medido</td></tr>
+          <tr><td><strong>SpO2</strong></td><td>Saturación de oxígeno en % — valor medido</td></tr>
+          <tr><td><strong>FR</strong></td><td>Frecuencia respiratoria por minuto — valor medido</td></tr>
+          <tr><td><strong>Temp</strong></td><td>Temperatura corporal en °C — valor medido</td></tr>
+          <tr><td><strong>Conciencia</strong></td><td>Nivel de consciencia — Orientado, Confuso o Letárgico</td></tr>
+          <tr><td><strong>Inicio</strong></td><td>Cómo comenzaron los síntomas — Súbito, Progresivo o Recurrente</td></tr>
+          <tr><td><strong>Movilidad</strong></td><td>Capacidad de caminar — Ambulatorio o No Ambulatorio</td></tr>
+          <tr><td><strong>Acompañante</strong></td><td>Contexto social — Acompañado o Sin acompañante</td></tr>
+          <tr><td><strong>Cooperación</strong></td><td>Comportamiento — Cooperativo o Agitado</td></tr>
+        </tbody>
+      </table>
+      <p class="lead">Usarás estos valores junto con las reglas de triaje (explicadas en la página siguiente) para tomar tus decisiones.</p>
+
+      </p>Tomarás tres tipos de decisiones para cada grupo de cinco pacientes.</p>
       <div class="phases">
         <div class="phase-box">
           <div class="phase-num">1</div>
           <div class="phase-title">Orden de selección</div>
-          <div class="phase-desc">Ordena los cinco pacientes de mayor a menor urgencia.</div>
+          <div class="phase-desc">Ordena los cinco pacientes de mayor a menor urgencia en base a su ficha de paciente.</div>
         </div>
         <div class="phase-box">
           <div class="phase-num">2</div>
@@ -95,9 +114,7 @@ tr:nth-child(even) td{background:#f9f8f6}
           <div class="phase-desc">Asigna cada paciente al destino hospitalario correcto — por ejemplo Sala de Riesgo, Sala Vigilada o Quirófano.</div>
         </div>
       </div>
-      <h2>Cómo funciona el juego</h2>
-      <p>Cada tarjeta de paciente muestra un conjunto de valores clínicos: frecuencia cardíaca, presión arterial, saturación de oxígeno, frecuencia respiratoria, temperatura, nivel de conciencia, inicio de síntomas, movilidad y contexto social.</p>
-      <p>Usará estos valores junto con las reglas de triaje (explicadas en la página siguiente) para tomar sus decisiones.</p>
+      <h2>Fases del juego</h2>
 
       <div class="note" style="margin-bottom:12px">
         <strong>Fase de entrenamiento (3 grupos de 5 pacientes)</strong><br>
@@ -116,30 +133,34 @@ tr:nth-child(even) td{background:#f9f8f6}
       <div class="note">
         El botón <strong>Reglas</strong> siempre está visible durante el juego. Puede abrirlo en cualquier momento para consultar las reglas de triaje — úselo tanto como necesite.
       </div>
-      <h2>Información del paciente en cada tarjeta</h2>
+
+      {% else %}
+   <h1>Welcome to the Triage Training</h1>
+      <p class="lead">You are a trainee in a hospital emergency department. You will work with groups of simulated patients, generated for this exercise. The groups consist of five patients and you will go through a training phase followed by a test phase. For each group of patients, you will go through 3 phases in which you will make different decisions about what to do with each patient. Each patient card shows a set of clinical values: heart rate, blood pressure, oxygen saturation, respiratory rate, temperature, alertness, onset, mobility, and social context.</p>
+      <h2>Patient information on each card</h2>
       <table>
-        <thead><tr><th>Variable</th><th>Descripción</th></tr></thead>
+        <thead><tr><th>Variable</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td><strong>FC</strong></td><td>Frecuencia cardíaca en latidos por minuto</td></tr>
-          <tr><td><strong>TA</strong></td><td>Tensión arterial en mmHg</td></tr>
-          <tr><td><strong>SpO2</strong></td><td>Saturación de oxígeno en porcentaje</td></tr>
-          <tr><td><strong>FR</strong></td><td>Frecuencia respiratoria por minuto</td></tr>
-          <tr><td><strong>Temp</strong></td><td>Temperatura corporal en °C</td></tr>
-          <tr><td><strong>Conciencia</strong></td><td>Orientado, Confuso o Letárgico</td></tr>
-          <tr><td><strong>Inicio</strong></td><td>Cómo empezaron los síntomas — Súbito, Progresivo o Recurrente</td></tr>
-          <tr><td><strong>Movilidad</strong></td><td>Si el paciente puede caminar (Ambulatorio / No Ambulatorio)</td></tr>
-          <tr><td><strong>Acompañante</strong></td><td>Si hay alguien con el paciente</td></tr>
-          <tr><td><strong>Cooperación</strong></td><td>Cooperativo o Agitado</td></tr>
+          <tr><td><strong>HR</strong></td><td>Heart rate in bpm — measured value</td></tr>
+          <tr><td><strong>BP</strong></td><td>Blood pressure in mmHg — measured value</td></tr>
+          <tr><td><strong>SpO2</strong></td><td>Oxygen saturation in % — measured value</td></tr>
+          <tr><td><strong>RR</strong></td><td>Respiratory rate per minute — measured value</td></tr>
+          <tr><td><strong>Temp</strong></td><td>Body temperature in °C — measured value</td></tr>
+          <tr><td><strong>Alertness</strong></td><td>Level of consciousness — Oriented, Confused, or Lethargic</td></tr>
+          <tr><td><strong>Onset</strong></td><td>How symptoms began — Sudden, Progressive, or Recurring</td></tr>
+          <tr><td><strong>Mobility</strong></td><td>Ability to walk — Ambulatory or Non-Ambulatory</td></tr>
+          <tr><td><strong>Companion</strong></td><td>Social context — Accompanied or Unaccompanied</td></tr>
+          <tr><td><strong>Cooperation</strong></td><td>Behaviour — Cooperative or Agitated</td></tr>
         </tbody>
       </table>
-      {% else %}
-      <h1>Welcome to the Triage Training</h1>
-      <p class="lead">In this exercise you will triage groups of simulated patients. You will make three types of decisions for each group of five patients.</p>
+      <p class="lead">You will use these values together with the triage rules (explained on the next page) to make your decisions.</p>
+
+      <p>You will make three types of decisions for each group of five patients.</p>
       <div class="phases">
         <div class="phase-box">
           <div class="phase-num">1</div>
           <div class="phase-title">Selection order</div>
-          <div class="phase-desc">Rank the five patients in the order they should be seen, from most to least urgent.</div>
+          <div class="phase-desc">Rank the five patients in the order they should be seen, from most to least urgent based on the patient card.</div>
         </div>
         <div class="phase-box">
           <div class="phase-num">2</div>
@@ -152,9 +173,7 @@ tr:nth-child(even) td{background:#f9f8f6}
           <div class="phase-desc">Assign each patient to the correct hospital destination — for example Risk Ward, Monitored Ward, or Surgical Bay.</div>
         </div>
       </div>
-      <h2>How the game works</h2>
-      <p>Each patient card shows a set of clinical values: heart rate, blood pressure, oxygen saturation, respiratory rate, temperature, alertness, onset, mobility, and social context.</p>
-      <p>You will use these values together with the triage rules (explained on the next page) to make your decisions.</p>
+      <h2>Game phases</h2>
 
       <div class="note" style="margin-bottom:12px">
         <strong>Training phase (3 groups of 5 patients)</strong><br>
@@ -173,22 +192,7 @@ tr:nth-child(even) td{background:#f9f8f6}
       <div class="note">
         A <strong>Rules</strong> button is always visible during the game. You can open it at any time to consult the triage rules — use it as much as you need to.
       </div>
-      <h2>Patient information on each card</h2>
-      <table>
-        <thead><tr><th>Variable</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td><strong>HR</strong></td><td>Heart rate in beats per minute</td></tr>
-          <tr><td><strong>BP</strong></td><td>Blood pressure in mmHg</td></tr>
-          <tr><td><strong>SpO2</strong></td><td>Oxygen saturation as a percentage</td></tr>
-          <tr><td><strong>RR</strong></td><td>Respiratory rate per minute</td></tr>
-          <tr><td><strong>Temp</strong></td><td>Body temperature in °C</td></tr>
-          <tr><td><strong>Alertness</strong></td><td>Oriented, Confused, or Lethargic</td></tr>
-          <tr><td><strong>Onset</strong></td><td>How symptoms began — Sudden, Progressive, or Recurring</td></tr>
-          <tr><td><strong>Mobility</strong></td><td>Whether the patient can walk (Ambulatory / Non-Ambulatory)</td></tr>
-          <tr><td><strong>Companion</strong></td><td>Whether someone is with the patient</td></tr>
-          <tr><td><strong>Cooperation</strong></td><td>Cooperative or Agitated</td></tr>
-        </tbody>
-      </table>
+
       {% endif %}
     </div>
     <div class="footer">

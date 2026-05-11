@@ -39,12 +39,14 @@ h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
 
   {% set ns = namespace(sel=0, proc=0, dest=0) %}
   {% for grp_key, it in sess.iterations.items() %}
+    {% if it.phase == 'test' or grp_key.startswith('test_') %}
     {% set sel_score = it.selection.final_score or (it.selection.attempts[-1].score if it.selection.attempts else '0/5') %}
     {% set proc_score = it.processes.final_score or (it.processes.attempts[-1].score if it.processes.attempts else '0/5') %}
     {% set dest_score = it.destinations.final_score or (it.destinations.attempts[-1].score if it.destinations.attempts else '0/5') %}
     {% set ns.sel = ns.sel + sel_score.split('/')[0]|int %}
     {% set ns.proc = ns.proc + proc_score.split('/')[0]|int %}
     {% set ns.dest = ns.dest + dest_score.split('/')[0]|int %}
+    {% endif %}
   {% endfor %}
   {% set total_sel = ns.sel %}
   {% set total_proc = ns.proc %}
@@ -73,6 +75,7 @@ h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
   </div>
 
   {% for grp_key, it in sess.iterations.items()|sort %}
+  {% if it.phase == 'test' or grp_key.startswith('test_') %}
   <div class="group-block">
     <div class="group-title">{% if language == 'es' %}Grupo{% else %}Group{% endif %} {{ it.group }}</div>
     {% if language == 'es' %}
@@ -83,17 +86,20 @@ h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
     {% for phase_name, phase_data in phase_labels %}
     <div class="phase-row">
       <span class="phase-name">{{ phase_name }}</span>
-      <span class="attempts">{{ phase_data.attempts|length }} {% if language == 'es' %}intento(s){% else %}attempt(s){% endif %}</span>
       {% set fs = phase_data.final_score or (phase_data.attempts[-1].score if phase_data.attempts else '—') %}
       <span class="{{ 'ok' if fs == '5/5' else 'warn' if fs.startswith('3') or fs.startswith('4') else 'bad' }}">{{ fs }}</span>
     </div>
     {% endfor %}
   </div>
+  {% endif %}
   {% endfor %}
 
-  <div class="btn-row">
-    <a href="/"><button class="btn btn-primary">{% if language == 'es' %}Nueva sesión{% else %}New session{% endif %}</button></a>
-    <a href="/admin"><button class="btn">{% if language == 'es' %}Vista del experimentador{% else %}Experimenter view{% endif %}</button></a>
+  <div style="margin-top:28px;padding:20px;background:#fff;border:0.5px solid #e0ddd5;border-radius:12px;text-align:center">
+    {% if language == 'es' %}
+    <p style="font-size:15px;color:#444;line-height:1.7">¡Muchas gracias por tu participación!<br><span style="font-size:13px;color:#888">Puedes cerrar el navegador.</span></p>
+    {% else %}
+    <p style="font-size:15px;color:#444;line-height:1.7">Thank you for participating!<br><span style="font-size:13px;color:#888">You can now close your browser.</span></p>
+    {% endif %}
   </div>
 </div>
 </body>
