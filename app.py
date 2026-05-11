@@ -141,6 +141,7 @@ def ensure_iteration(sess, group, phase="train"):
             "destinations": {"attempts": [], "final_score": None},
             "phase": phase,
             "phase": phase,
+            "phase": phase,
             "completed": False
         }
     return sess["iterations"][key]
@@ -325,7 +326,8 @@ def api_validate():
     if not sess:
         return jsonify({"error": "session not found"}), 404
 
-    it = ensure_iteration(sess, group)
+    game_phase = session.get("phase", "train")
+    it = ensure_iteration(sess, group, game_phase)
     timestamp = datetime.now(timezone.utc).isoformat()
 
     if phase == "selection":
