@@ -9,19 +9,18 @@ Two learning modes:
 Phases:
   IDLE
   INTRO
-  CARD_SCAN           (guided only: wait for any card visible)
-  SLOT_GUIDANCE       (guided only: explaining current target slot)
-  SLOT_WAIT           (guided only: waiting for correct card in slot)
-  PLACEMENT           (error_based: participant places freely)
-  VALIDATE_WAIT       (error_based: waiting for validate trigger)
+  CARD_SCAN             (guided only: wait for any card visible)
+  SLOT_GUIDANCE         (guided only: explaining current target slot)
+  SLOT_WAIT             (guided only: waiting for correct card in slot)
+  PLACEMENT             (error_based: participant places freely)
+  VALIDATE_WAIT         (error_based: waiting for validate trigger)
   SELECTION_CORRECTION
-  PROCESS_INTRO
-  PROCESS_GUIDANCE    (guided only: explaining process per patient)
-  PROCESS_WAIT        (guided only: waiting for correct process)
-  PROCESS_PLACING     (error_based: participant attaches processes)
-  PROCESS_VALIDATE    (error_based: waiting for validate trigger)
-  PROCESS_CORRECTION
-  DESTINATION_PHASE   (deferred)
+  DEST_INTRO
+  DEST_GUIDANCE         (guided only: explaining destination per patient)
+  DEST_WAIT             (guided only: waiting for correct destination card)
+  DEST_PLACING          (error_based: participant places destination cards)
+  DEST_VALIDATE         (error_based: waiting for validate trigger)
+  DEST_CORRECTION
   ITERATION_COMPLETE
 """
 
@@ -37,8 +36,8 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from rules_engine import (
     PID_TO_PATIENT, CORRECT_ORDERS,
-    validate_selection, validate_processes, validate_destinations,
-    correct_processes_for, correct_destination_for,
+    validate_selection, validate_destinations,
+    correct_destination_for,
     get_group_patients,
 )
 from design_patients import derive_risk
@@ -57,11 +56,11 @@ def _build_aruco_db():
 ARUCO_TO_PID = _build_aruco_db()
 ITERATIONS   = CORRECT_ORDERS  # same structure: {set: {group: [pids]}}
 
-PROCESS_NAMES = {
-    50: "Rapid Response",
-    51: "Stretcher",
-    52: "Companion Bay",
-    53: "Interpreter",
+DEST_NAMES = {
+    50: "Surgical Bay",
+    51: "Risk Ward",
+    52: "Monitored Ward",
+    53: "General Ward",
 }
 
 # CORRECT_PROCESSES and CORRECT_DESTINATIONS now come from rules_engine
@@ -76,13 +75,12 @@ class Phase(Enum):
     PLACEMENT           = auto()
     VALIDATE_WAIT       = auto()
     SELECTION_CORRECTION= auto()
-    PROCESS_INTRO       = auto()
-    PROCESS_GUIDANCE    = auto()
-    PROCESS_WAIT        = auto()
-    PROCESS_PLACING     = auto()
-    PROCESS_VALIDATE    = auto()
-    PROCESS_CORRECTION  = auto()
-    DESTINATION_PHASE   = auto()
+    DEST_INTRO          = auto()
+    DEST_GUIDANCE       = auto()
+    DEST_WAIT           = auto()
+    DEST_PLACING        = auto()
+    DEST_VALIDATE       = auto()
+    DEST_CORRECTION     = auto()
     ITERATION_COMPLETE  = auto()
 
 class RobotMode(Enum):
@@ -112,7 +110,6 @@ class IterationResult:
     iteration:    int
     mode:         str
     selection:    PhaseLog = field(default_factory=lambda: PhaseLog("selection"))
-    processes:    PhaseLog = field(default_factory=lambda: PhaseLog("processes"))
     destinations: PhaseLog = field(default_factory=lambda: PhaseLog("destinations"))
     timestamp:    float    = field(default_factory=time.time)
 
@@ -125,7 +122,6 @@ class IterationResult:
         return {"set": self.set_label, "iteration": self.iteration,
                 "mode": self.mode,
                 "selection":    ps(self.selection),
-                "processes":    ps(self.processes),
                 "destinations": ps(self.destinations)}
 
 # ─── GAME ENGINE ──────────────────────────────────────────────────────────────
@@ -148,7 +144,7 @@ class GameEngine:
         self._actions_queue  = []
         self._session_log    = []
         self._board_state    = {}
-        self._process_state  = {}
+        self._dest_state    = {}
         self._eval_triggered = False
         self._attempt_count  = 0
 
@@ -169,7 +165,7 @@ class GameEngine:
             mode=self.mode.value,
         )
         self._board_state    = {}
-        self._process_state  = {}
+        self._dest_state    = {}
         self._eval_triggered = False
         self._attempt_count  = 0
         self._actions_queue  = []
@@ -197,7 +193,7 @@ class GameEngine:
                process_state: dict):
         """Call every frame with latest detection results."""
         self._board_state   = board_state
-        self._process_state = process_state
+        self._dest_state    = process_state
 
         # ── GUIDED: card scan ─────────────────────────────────────────────
         if self.phase == Phase.CARD_SCAN:
@@ -238,33 +234,33 @@ class GameEngine:
                 self._eval_triggered = False
                 self._do_evaluate_selection()
 
-        # ── After selection: process phase ────────────────────────────────
-        elif self.phase == Phase.PROCESS_INTRO:
+        # ── After selection: destination phase ───────────────────────────
+        elif self.phase == Phase.DEST_INTRO:
             pass  # handled in transition
 
-        # ── GUIDED: process phase ─────────────────────────────────────────
-        elif self.phase == Phase.PROCESS_WAIT:
+        # ── GUIDED: destination phase ─────────────────────────────────────
+        elif self.phase == Phase.DEST_WAIT:
             target_pid = self.current_pids[self.current_slot - 1]
-            expected   = sorted(correct_processes_for(self.set_label, target_pid))
-            placed     = sorted(process_state.get(target_pid, []))
+            expected   = correct_destination_for(self.set_label, target_pid)
+            placed_ids = self._dest_state.get(target_pid, [])
+            placed     = DEST_NAMES.get(placed_ids[0]) if placed_ids else None
 
-            # Only react when process cards on this patient have changed
-            last_seen = self._last_slot_card.get(f"proc_{self.current_slot}")
+            last_seen = self._last_slot_card.get(f"dest_{self.current_slot}")
             if placed != last_seen:
-                self._last_slot_card[f"proc_{self.current_slot}"] = placed
+                self._last_slot_card[f"dest_{self.current_slot}"] = placed
                 if placed == expected:
                     if self.current_slot == 5:
-                        self._complete_processes()
+                        self._complete_destinations()
                     else:
                         self.current_slot += 1
-                        self._announce_process_slot(self.current_slot)
+                        self._announce_dest_slot(self.current_slot)
 
-        # ── ERROR_BASED: process validate ─────────────────────────────────
-        elif self.phase in (Phase.PROCESS_VALIDATE,
-                            Phase.PROCESS_CORRECTION):
+        # ── ERROR_BASED: destination validate ────────────────────────────
+        elif self.phase in (Phase.DEST_VALIDATE,
+                            Phase.DEST_CORRECTION):
             if self._eval_triggered:
                 self._eval_triggered = False
-                self._do_evaluate_processes()
+                self._do_evaluate_destinations()
 
         return self._flush_actions()
 
@@ -272,12 +268,12 @@ class GameEngine:
         """Called when participant says 'validate' (error_based) or 'ready'."""
         if self.phase == Phase.PLACEMENT:
             self.phase = Phase.VALIDATE_WAIT
-        if self.phase == Phase.PROCESS_PLACING:
-            self.phase = Phase.PROCESS_VALIDATE
+        if self.phase == Phase.DEST_PLACING:
+            self.phase = Phase.DEST_VALIDATE
         if self.phase in (Phase.VALIDATE_WAIT,
                           Phase.SELECTION_CORRECTION,
-                          Phase.PROCESS_VALIDATE,
-                          Phase.PROCESS_CORRECTION):
+                          Phase.DEST_VALIDATE,
+                          Phase.DEST_CORRECTION):
             self._eval_triggered = True
             print(f"[ENGINE] Validate triggered — phase: {self.phase.name}")
         else:
@@ -287,11 +283,11 @@ class GameEngine:
         """Participant asks a question — answered with fixed fallback text."""
         # Log question
         if self.result:
-            pl = (self.result.processes
-                  if self.phase in (Phase.PROCESS_INTRO, Phase.PROCESS_GUIDANCE,
-                                    Phase.PROCESS_WAIT, Phase.PROCESS_PLACING,
-                                    Phase.PROCESS_VALIDATE,
-                                    Phase.PROCESS_CORRECTION)
+            pl = (self.result.destinations
+                  if self.phase in (Phase.DEST_INTRO, Phase.DEST_GUIDANCE,
+                                    Phase.DEST_WAIT, Phase.DEST_PLACING,
+                                    Phase.DEST_VALIDATE,
+                                    Phase.DEST_CORRECTION)
                   else self.result.selection)
             pl.questions_asked += 1
 
@@ -316,7 +312,7 @@ class GameEngine:
         target_pid = self.current_pids[slot_num - 1]
         patient    = PID_TO_PATIENT[(self.set_label, target_pid)]
         expl_key   = f"explanation_{self.language}"
-        expl       = patient.get(expl_key, patient.get("explanation_en",""))
+        expl       = patient.get(expl_key, patient.get(expl_key,""))
 
         text = (f"Slot {slot_num}: place {target_pid} {patient['name']}. "
                 f"{expl}")
@@ -329,30 +325,25 @@ class GameEngine:
         """Guided: wrong card placed — correct using explanation as context."""
         patient    = PID_TO_PATIENT[(self.set_label, target_pid)]
         expl_key   = f"explanation_{self.language}"
-        expl       = patient.get(expl_key, patient.get("explanation_en",""))
+        expl       = patient.get(expl_key, patient.get(expl_key,""))
         placed_pt  = PID_TO_PATIENT.get((self.set_label, placed_pid), {})
 
         text = (f"Slot {slot_num} should be {target_pid} {patient['name']}, "
                 f"not {placed_pid}. {expl}")
         self._queue({"type":"speak","text":text})
 
-    def _announce_process_slot(self, slot_num: int):
-        """Guided: announce which processes to attach for current patient."""
+    def _announce_dest_slot(self, slot_num: int):
+        """Guided: announce which destination card to place for current patient."""
         target_pid = self.current_pids[slot_num - 1]
         patient    = PID_TO_PATIENT[(self.set_label, target_pid)]
-        risk       = derive_risk(patient)
-        procs      = correct_processes_for(self.set_label, target_pid)
-        proc_names = [PROCESS_NAMES[p] for p in procs]
-
-        if proc_names:
-            text = (f"For slot {slot_num}, {target_pid} {patient['name']}: "
-                    f"attach {', '.join(proc_names)}.")
-        else:
-            text = (f"For slot {slot_num}, {target_pid} {patient['name']}: "
-                    f"no additional processes needed.")
+        dest       = correct_destination_for(self.set_label, target_pid)
+        expl_key   = f"exp_destination_{self.language}"
+        expl       = patient.get(expl_key, patient.get("explanation_en",""))
+        text = (f"For slot {slot_num}, {target_pid} {patient['name']}: "
+                f"place {dest}. {expl}")
         self._queue({"type":"speak","text":text})
-        self._queue({"type":"process_target",
-                     "slot":slot_num,"pid":target_pid,"processes":procs})
+        self._queue({"type":"dest_target",
+                     "slot":slot_num,"pid":target_pid,"destination":dest})
 
     # ─── EVALUATION ───────────────────────────────────────────────────────────
     def _do_evaluate_selection(self):
@@ -380,51 +371,53 @@ class GameEngine:
             self._queue({"type":"speak","text":text})
             self._queue({"type":"log","phase":"selection",
                          "score":"5/5","attempt":self._attempt_count})
-            self._transition_to_process()
+            self._transition_to_dest()
         else:
             pdata   = self._build_patient_data_dict(self.current_pids)
             context = self._build_explanation_context()
             text = self._fb_selection_correction(errors, expected)
             self._queue({"type":"speak","text":text})
+            self._queue({"type": "speak", "text": context})  # Add context explanation
             self._queue({"type":"log","phase":"selection",
                          "score":f"{score}/5",
                          "attempt":self._attempt_count,"errors":errors})
+            self._queue({"type":"listen"}) # Listen after correction to validate again
             self.phase = Phase.SELECTION_CORRECTION
 
-    def _do_evaluate_processes(self):
+    def _do_evaluate_destinations(self):
         errors = []; score = 0
         for pid in self.current_pids:
-            placed   = sorted(PROCESS_NAMES.get(p, p) for p in self._process_state.get(pid, []))
-            expected = sorted(correct_processes_for(self.set_label, pid))
+            placed_ids = self._dest_state.get(pid, [])
+            placed     = DEST_NAMES.get(placed_ids[0]) if placed_ids else None
+            expected   = correct_destination_for(self.set_label, pid)
             if placed == expected:
                 score += 1
             else:
                 errors.append((pid, placed, expected))
 
         self._attempt_count += 1
-        self.result.processes.attempts.append(AttemptLog(
+        self.result.destinations.attempts.append(AttemptLog(
             attempt=self._attempt_count,
-            board={p: self._process_state.get(p,[])
+            board={p: self._dest_state.get(p,[])
                    for p in self.current_pids},
             errors=errors, score=f"{score}/5"))
-        print(f"[ENGINE] Process attempt {self._attempt_count}: {score}/5")
+        print(f"[ENGINE] Destination attempt {self._attempt_count}: {score}/5")
 
         if score == 5:
-            self.result.processes.final_score = "5/5"
-            text = self._fb_correct("processes")
+            self.result.destinations.final_score = "5/5"
+            text = self._fb_correct("destinations")
             self._queue({"type":"speak","text":text})
-            self._queue({"type":"log","phase":"processes",
+            self._queue({"type":"log","phase":"destinations",
                          "score":"5/5","attempt":self._attempt_count})
             self._finish_iteration()
         else:
-            pdata   = self._build_patient_data_dict(self.current_pids)
-            context = self._build_explanation_context()
-            text = self._fb_process_correction(errors)
+            text = self._fb_dest_correction(errors)
             self._queue({"type":"speak","text":text})
-            self._queue({"type":"log","phase":"processes",
+            self._queue({"type":"log","phase":"destinations",
                          "score":f"{score}/5",
                          "attempt":self._attempt_count,"errors":errors})
-            self.phase = Phase.PROCESS_CORRECTION
+            self._queue({"type":"listen"})
+            self.phase = Phase.DEST_CORRECTION
 
     def _complete_selection(self):
         """Guided: all 5 slots correctly filled."""
@@ -435,37 +428,37 @@ class GameEngine:
         text = self._fb_correct("selection")
         self._queue({"type":"speak","text":text})
         self._queue({"type":"log","phase":"selection","score":"5/5"})
-        self._transition_to_process()
+        self._transition_to_dest()
 
-    def _complete_processes(self):
-        """Guided: all processes correctly attached."""
-        self.result.processes.final_score = "5/5"
-        self.result.processes.attempts.append(AttemptLog(
+    def _complete_destinations(self):
+        """Guided: all destination cards correctly placed."""
+        self.result.destinations.final_score = "5/5"
+        self.result.destinations.attempts.append(AttemptLog(
             attempt=1,
-            board={p: self._process_state.get(p,[])
+            board={p: self._dest_state.get(p,[])
                    for p in self.current_pids},
             errors=[], score="5/5"))
-        text = self._fb_correct("processes")
+        text = self._fb_correct("destinations")
         self._queue({"type":"speak","text":text})
         self._finish_iteration()
 
     # ─── PHASE TRANSITIONS ────────────────────────────────────────────────────
-    def _transition_to_process(self):
+    def _transition_to_dest(self):
         self._attempt_count  = 0
         self.current_slot    = 1
-        self._last_slot_card = {}   # reset for process phase tracking
-        self.phase = Phase.PROCESS_INTRO
-        text = self._fb_process_intro()
+        self._last_slot_card = {}
+        self.phase = Phase.DEST_INTRO
+        text = self._fb_dest_intro()
         self._queue({"type":"speak","text":text})
-        self._queue({"type":"state_change","phase":"PROCESS_INTRO"})
+        self._queue({"type":"state_change","phase":"DEST_INTRO"})
 
         if self.mode == RobotMode.GUIDED_LEARNING:
-            self._announce_process_slot(1)
-            self.phase = Phase.PROCESS_WAIT
-            self._queue({"type":"state_change","phase":"PROCESS_WAIT"})
+            self._announce_dest_slot(1)
+            self.phase = Phase.DEST_WAIT
+            self._queue({"type":"state_change","phase":"DEST_WAIT"})
         else:
-            self.phase = Phase.PROCESS_PLACING
-            self._queue({"type":"state_change","phase":"PROCESS_PLACING"})
+            self.phase = Phase.DEST_PLACING
+            self._queue({"type":"state_change","phase":"DEST_PLACING"})
 
     def _finish_iteration(self):
         self._session_log.append(self.result)
@@ -518,8 +511,8 @@ class GameEngine:
 
     def _fb_correct(self, phase):
         if phase == "selection":
-            return "Correct order. Now attach process cards to each patient."
-        return "All processes correct."
+            return "Correct order."
+        return "All destinations correct."
 
     def _fb_selection_correction(self, errors, expected):
         parts = [f"slot {s}: expected {e}, got {p or 'empty'}"
@@ -529,22 +522,24 @@ class GameEngine:
         return (f"Errors: {'; '.join(parts)}. "
                 f"Correct order: {order}.")
 
-    def _fb_process_intro(self):
-        return ("Attach the additional process cards to each patient card. "
+    def _fb_dest_intro(self):
+        return ("Place the destination card below each patient card. "
                 "Say validate when done."
                 if self.mode == RobotMode.ERROR_BASED
-                else "Now I will guide you through the process cards.")
+                else "Now I will guide you through the destination cards.")
 
-    def _fb_process_correction(self, errors):
+    def _fb_dest_correction(self, errors):
         parts = []
-        for pid,placed,expected in errors:
-            missing=[i for i in expected if i not in placed]
-            extra  =[i for i in placed  if i not in expected]
-            msg=f"{pid}:"
-            if missing: msg+=f" add {', '.join(missing)}"
-            if extra:   msg+=f" remove {', '.join(extra)}"
+        for pid, placed, expected in errors:
+            p = PID_TO_PATIENT[(self.set_label, pid)]
+            expl_key = f"exp_destination_{self.language}"
+            expl = p.get(expl_key, p.get("explanation_en",""))
+            msg = f"{pid} {p['name']}: place {expected}"
+            if placed:
+                msg += f", not {placed}"
+            msg += f". {expl}"
             parts.append(msg)
-        return f"Process errors: {' '.join(parts)}."
+        return " ".join(parts)
 
     def _fb_question_answer(self):
         if self.mode == RobotMode.ERROR_BASED:

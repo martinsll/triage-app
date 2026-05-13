@@ -1,3 +1,134 @@
+'''
+#Codi Lavinia per solucionar problemes de detecció de més de 3 additional processes
+def _camera_cb(self, msg):
+        """
+        Receive camera frame, detect ArUco markers,
+        parse board state, and cache latest perception.
+        """
+
+        import time
+
+        try:
+            # ROS Image -> OpenCV image
+            frame = self.bridge.imgmsg_to_cv2(
+                msg,
+                desired_encoding='passthrough'
+            )
+
+            # Convert YUY2 -> BGR
+            frame = cv2.cvtColor(
+                frame,
+                cv2.COLOR_YUV2BGR_YUY2
+            )
+
+        except Exception as e:
+            self.get_logger().error(f"CvBridge error: {e}")
+            return
+
+        try:
+            # ------------------------------------------------------------
+            # Detect markers
+            # ------------------------------------------------------------
+            markers = self.detect_all_markers(
+                frame,
+                self.aruco_detector
+            )
+
+            # ------------------------------------------------------------
+            # Extract board corner markers
+            # ------------------------------------------------------------
+            corner_markers = {
+                k: v for k, v in markers.items()
+                if k in CORNER_IDS
+            }
+
+            # ------------------------------------------------------------
+            # Compute board corners
+            # ------------------------------------------------------------
+            board_corners = self.get_board_corners(
+                corner_markers
+            )
+
+            board_found = board_corners is not None
+
+            # ------------------------------------------------------------
+            # Parse scene
+            # ------------------------------------------------------------
+            board_state, all_visible, raw_process_state = self.parse_scene(
+                markers,
+                board_corners
+            )
+
+            # ============================================================
+            # STABLE PROCESS TRACKING (TIME-BASED)
+            # ============================================================
+
+            now = time.time()
+
+            # Timeout in seconds before removing unseen markers
+            VISIBLE_TIMEOUT = 1.5
+
+            # ------------------------------------------------------------
+            # Update last-seen timestamps
+            # ------------------------------------------------------------
+            #
+            # self.process_last_seen should be initialized once in __init_:
+            #
+            # self._process_last_seen = {}
+            #
+            # format:
+            # {
+            #   (pid, proc_id): timestamp
+            # }
+            #
+            # ------------------------------------------------------------
+
+            for pid, proc_ids in raw_process_state.items():
+                for proc_id in proc_ids:
+                    key = (pid, proc_id)
+                    self._process_last_seen[key] = now
+
+            # ------------------------------------------------------------
+            # Build stable process state
+            # ------------------------------------------------------------
+
+            stable_processes = {}
+
+            expired_keys = []
+
+            for (pid, proc_id), last_seen in self._process_last_seen.items():
+
+                # Keep marker alive for timeout window
+                if (now - last_seen) < VISIBLE_TIMEOUT:
+                    stable_processes.setdefault(pid, set()).add(proc_id)
+
+                else:
+                    expired_keys.append((pid, proc_id))
+
+            # ------------------------------------------------------------
+            # Cleanup expired markers
+            # ------------------------------------------------------------
+
+            for key in expired_keys:
+                del self._process_last_seen[key]
+
+            # ------------------------------------------------------------
+            # Convert sets -> sorted lists
+            # ------------------------------------------------------------
+
+            process_state_integer = {
+                pid: sorted(procs)
+                for pid, procs in stable_processes.items()
+            }
+
+            process_state = {
+                pid: sorted(
+                    ARUCO_TO_PROCESS.get(p, p)
+                    for p in procs
+                )
+                for pid, procs in stable_processes.items()
+            }
+'''
 # -*- coding: utf-8 -*-
 """
 Triage Game — Main Loop (v2)
@@ -8,7 +139,7 @@ Detection each frame:
   1. Detect all ArUco markers
   2. Board corners (IDs 0-3) → compute 5 slots
   3. Patient cards (IDs 10-49) → assign to slots
-  4. Process cards (IDs 50-53) → map to patient in same slot
+  4. Destination cards (IDs 50-53) → map to patient in same slot
   5. Feed results to GameEngine.update()
   6. Print robot actions to terminal (TTS placeholder)
 
@@ -42,20 +173,20 @@ UPSCALE     = 2.0
 
 CORNER_IDS  = {0, 1, 2, 3}
 PATIENT_IDS = set(range(10, 50))
-PROCESS_IDS = {50, 51, 52, 53}
+DEST_IDS = {50, 51, 52, 53}
 
-PROCESS_NAMES = {
-    50: "RapidResp",
-    51: "Stretcher",
-    52: "Companion",
-    53: "Interpreter",
+DEST_NAMES_SHORT = {
+    50: "SurgBay",
+    51: "RiskWard",
+    52: "MonWard",
+    53: "GenWard",
 }
 
-ARUCO_TO_PROCESS = {
-    50: "Rapid Response",
-    51: "Stretcher", 
-    52: "Companion Bay",
-    53: "Interpreter",
+ARUCO_TO_DEST = {
+    50: "Surgical Bay",
+    51: "Risk Ward",
+    52: "Monitored Ward",
+    53: "General Ward",
 }
 
 PATIENT_DB = {
@@ -149,14 +280,14 @@ def parse_scene(markers, board_corners):
     Returns:
       board_state:     {slot(1-5): pid}
       all_visible_ids: [aruco_id, ...]  all patient IDs visible anywhere
-      process_state:   {pid: [process_aruco_ids]}
+      dest_state:      {pid: dest_aruco_id}  — one destination card per patient
     """
     if board_corners is None:
         return {}, [], {}
 
     slots = compute_slots(board_corners)
     slot_to_patient   = {}   # slot_idx → pid
-    slot_to_processes = {}   # slot_idx → [aruco_id]
+    slot_to_dest      = {}   # slot_idx → aruco_id (one per slot)
 
     for aruco_id, corners in markers.items():
         # Use majority corner voting for robust slot assignment
@@ -166,18 +297,18 @@ def parse_scene(markers, board_corners):
         if aruco_id in PATIENT_IDS:
             _, pid = PATIENT_DB[aruco_id]
             slot_to_patient[slot_idx] = pid
-        elif aruco_id in PROCESS_IDS:
-            slot_to_processes.setdefault(slot_idx, []).append(aruco_id)
+        elif aruco_id in DEST_IDS:
+            slot_to_dest[slot_idx] = aruco_id
 
-    board_state   = {idx+1: pid for idx, pid in slot_to_patient.items()}
-    process_state = {}
-    for slot_idx, proc_ids in slot_to_processes.items():
+    board_state = {idx+1: pid for idx, pid in slot_to_patient.items()}
+    dest_state  = {}
+    for slot_idx, dest_id in slot_to_dest.items():
         pid = slot_to_patient.get(slot_idx)
         if pid:
-            process_state[pid] = proc_ids
+            dest_state[pid] = [dest_id]  # list for compatibility with stability buffer
 
     all_visible = [aid for aid in markers if aid in PATIENT_IDS]
-    return board_state, all_visible, process_state
+    return board_state, all_visible, dest_state
 
 # ─── TERMINAL DISPLAY ─────────────────────────────────────────────────────────
 def handle_actions(actions):
@@ -198,22 +329,21 @@ def handle_actions(actions):
             print(f"\n  ── Iteration complete ──")
             print(f"  Selection:  {sel.get('final_score','?')} "
                   f"({sel.get('attempts','?')} attempts)")
-            print(f"  Processes:  {proc.get('final_score','?')} "
-                  f"({proc.get('attempts','?')} attempts)")
+            print(f"  Destinations: {s.get('destinations',{}).get('final_score','?')} "
+                  f"({s.get('destinations',{}).get('attempts','?')} attempts)")
     return has_speech
 
-def format_status(engine, board_state, process_state,
+def format_status(engine, board_state, dest_state_int,
                   corners_found, board_found):
     phase = engine.phase.name
     if not board_found:
         return f"[{corners_found}/4 corners] [Phase: {phase}]"
     parts = []
     for slot in range(1, N_SLOTS+1):
-        pid   = board_state.get(slot, "----")
-        procs = process_state.get(pid, []) if pid != "----" else []
-        # Use short abbreviations to keep line manageable
-        proc_str = "+".join(PROCESS_NAMES.get(p, "?") for p in sorted(procs))
-        cell = f"[{slot}:{pid}" + (f"|{proc_str}" if proc_str else "") + "]"
+        pid      = board_state.get(slot, "----")
+        dest_ids = dest_state_int.get(pid, []) if pid != "----" else []
+        dest_str = DEST_NAMES_SHORT.get(dest_ids[0], "?") if dest_ids else ""
+        cell = f"[{slot}:{pid}" + (f"|{dest_str}" if dest_str else "") + "]"
         parts.append(cell)
     return f"[{phase}]  " + "  ".join(parts)
 
@@ -256,12 +386,12 @@ def main():
     snapshot_n = 0
     last_status = ""
 
-    # Stability buffer — process cards must be detected for N consecutive
+    # Stability buffer — destination cards must be detected for N consecutive
     # frames before being committed. Prevents flickering false positives.
-    STABLE_FRAMES    = 15   # frames to commit (~0.5s at 30fps)
-    DECAY_RATE       = 1    # slower decay = more tolerant of brief occlusions
-    process_counter  = {}   # {(pid, proc_id): frame_count}
-    stable_processes = {}   # {pid: set(proc_ids)} — committed stable state
+    STABLE_FRAMES  = 15   # frames to commit (~0.5s at 30fps)
+    DECAY_RATE     = 1    # slower decay = more tolerant of brief occlusions
+    dest_counter   = {}   # {(pid, dest_id): frame_count}
+    stable_dests   = {}   # {pid: set(dest_ids)} — committed stable state
 
     while True:
         ret, frame = cap.read()
@@ -274,53 +404,37 @@ def main():
         board_corners  = get_board_corners(corner_markers)
         board_found    = board_corners is not None
 
-        board_state, all_visible, raw_process_state = parse_scene(
+        board_state, all_visible, raw_dest_state = parse_scene(
             markers, board_corners)
 
-        # ── Stability buffering for process cards ─────────────────────────
-        # Increment counter for currently seen (pid, proc) pairs
+        # ── Stability buffering for destination cards ─────────────────────
         seen_pairs = set()
-        for pid, proc_ids in raw_process_state.items():
-            for proc_id in proc_ids:
-                key = (pid, proc_id)
+        for pid, dest_ids in raw_dest_state.items():
+            for dest_id in dest_ids:
+                key = (pid, dest_id)
                 seen_pairs.add(key)
-                process_counter[key] = process_counter.get(key, 0) + 1
-                # Commit once stable
-                if process_counter[key] >= STABLE_FRAMES:
-                    stable_processes.setdefault(pid, set()).add(proc_id)
+                dest_counter[key] = dest_counter.get(key, 0) + 1
+                if dest_counter[key] >= STABLE_FRAMES:
+                    stable_dests.setdefault(pid, set()).add(dest_id)
 
-        # Decay counters for pairs no longer seen
-        for key in list(process_counter.keys()):
+        for key in list(dest_counter.keys()):
             if key not in seen_pairs:
-                process_counter[key] = max(0, process_counter[key] - DECAY_RATE)
-                # Remove from stable if counter hits 0
-                if process_counter[key] == 0:
-                    pid, proc_id = key
-                    if pid in stable_processes:
-                        stable_processes[pid].discard(proc_id)
-                        if not stable_processes[pid]:
-                            del stable_processes[pid]
-                    del process_counter[key]
+                dest_counter[key] = max(0, dest_counter[key] - DECAY_RATE)
+                if dest_counter[key] == 0:
+                    pid, dest_id = key
+                    if pid in stable_dests:
+                        stable_dests[pid].discard(dest_id)
+                        if not stable_dests[pid]:
+                            del stable_dests[pid]
+                    del dest_counter[key]
 
-        # Convert stable_processes sets to sorted lists for engine
-        process_state = {pid: sorted(ARUCO_TO_PROCESS.get(p,p) for p in procs)
-                         for pid, procs in stable_processes.items()}
-        
-        process_state_integer = {}
-        process_state_integer = {pid: sorted(procs) for pid, procs in stable_processes.items()}
-
-        # Debug: print raw vs stable if they differ
-        if raw_process_state != {p: sorted(s)
-                                  for p, s in stable_processes.items()
-                                  if s}:
-            raw_str = str(raw_process_state)
-            if len(raw_str) < 80:
-                pass  # uncomment below to debug
-                # print(f"\n  [RAW] {raw_str}", flush=True)
+        # Convert to engine format: {pid: [dest_id]} (single id per patient)
+        dest_state     = {pid: [next(iter(ids))] for pid, ids in stable_dests.items() if ids}
+        dest_state_int = {pid: sorted(ids)       for pid, ids in stable_dests.items() if ids}
 
         # ── Feed engine ────────────────────────────────────────────────────
         if engine.phase != Phase.IDLE:
-            actions = engine.update(board_state, all_visible, process_state)
+            actions = engine.update(board_state, all_visible, dest_state)
             if actions:
                 had_speech = handle_actions(actions)
                 if had_speech:
@@ -328,7 +442,7 @@ def main():
 
         # ── Status line — only reprint when changed ────────────────────────
 
-        status = format_status(engine, board_state, process_state_integer,
+        status = format_status(engine, board_state, dest_state_int,
                                len(corner_markers), board_found)
         
         if status != last_status:
@@ -347,14 +461,14 @@ def main():
             print(f"\n[Starting iteration {iteration}]")
             actions = engine.start_iteration(iteration)
             handle_actions(actions)
-            # Reset process stability buffer for new iteration
-            process_counter  = {}
-            stable_processes = {}
+            # Reset destination stability buffer for new iteration
+            dest_counter = {}
+            stable_dests = {}
 
         elif key == ord('r'):
             print()
             engine.trigger_evaluation()
-            actions = engine.update(board_state, all_visible, process_state)
+            actions = engine.update(board_state, all_visible, dest_state)
             handle_actions(actions)
 
         elif key == ord('l'):
@@ -366,7 +480,7 @@ def main():
             print()
             print(f"  Phase:    {engine.phase.name}")
             print(f"  Board:    {board_state}")
-            print(f"  Processes:{process_state}")
+            print(f"  Destinations:{dest_state}")
             if engine.result:
                 print(f"  Summary:  {engine.result.summary()}")
             print(f"  Session:  {engine.get_session_log()}")
