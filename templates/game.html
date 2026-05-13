@@ -381,6 +381,7 @@ async function loadGroup(){
   STATE.set=data.set;
   STATE.language=data.language;
   STATE.gamePhase=data.phase||'train';
+  updateRulesButton();
   STATE.selection={};STATE.selectedCard=null;
   STATE.processes=Object.fromEntries(data.patients.map(p=>[p.pid,[]]));
   STATE.destinations=Object.fromEntries(data.patients.map(p=>[p.pid,'']));
@@ -1149,30 +1150,22 @@ function renderGuidedDestState(){
   const p=STATE.patients.find(x=>x.pid===pid);
   const hint=getExpText(p);
 
-  let rows='';
+  let cards='';
   STATE.correctOrder.forEach((ppid,idx)=>{
     const pp=STATE.patients.find(x=>x.pid===ppid);
     const cur=STATE.destinations[ppid]||'';
     const isActive=idx===step;
     const disabled=idx!==step;
-    const vitalsDest = (isActive || STATE.gamePhase==='test') ? `<div class="patient-mini">${vitalMini(pp)}</div><div style="font-size:11px;color:#aaa;margin-top:2px">${tAlert(pp.alertness)} · ${tOnset(pp.onset)} · ${tMob(pp.mobility)} · ${tComp(pp.companion)} · ${tCoop(pp.cooperation)}</div>` : '';
-    rows+=`<tr style="${isActive?'background:#F8FBFF':''}">
-      <td style="padding:8px 12px;border:0.5px solid #e0ddd5;font-size:12px">
-        <span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;
-          background:${COND_COLORS[pp.condition]}22;color:${COND_COLORS[pp.condition]}">${tCond(pp.condition)}</span>
-        ${riskTag(pp.risk)}
-        <div style="font-size:11px;color:#555;margin-top:2px">${pp.name}</div>
-        ${vitalsDest}
-      </td>
-      <td style="padding:8px 12px;border:0.5px solid #e0ddd5">
-        <select ${disabled?'disabled style="opacity:0.4"':''}
-          onchange="${disabled?'':'handleGuidedDestChange(\''+ppid+'\',this.value)'}"
-          style="width:100%;padding:6px 8px;border:0.5px solid #d0cdc5;border-radius:6px;font-size:12px;background:#fff">
-          <option value="">${T.select_dest}</option>
-          ${DESTINATIONS.map(d=>`<option value="${d}" ${cur===d?'selected':''}>${tDest(d)}</option>`).join('')}
+    const opts=DESTINATIONS.map(d=>`<option value="${d}" ${cur===d?'selected':''}>${tDest(d)}</option>`).join('');
+    cards+=`<div style="margin-bottom:12px;${disabled?'opacity:0.5':''}">
+      ${renderPatientCard(pp,{slot:idx+1})}
+      <div style="margin-top:6px">
+        <select style="width:100%;max-width:100%" ${disabled?'disabled':''}
+          onchange="${disabled?'':'handleGuidedDestChange(\''+ppid+'\',this.value)'}">
+          <option value="">${T.select_dest}</option>${opts}
         </select>
-      </td>
-    </tr>`;
+      </div>
+    </div>`;
   });
 
   const isTestDest=STATE.gamePhase==='test';
@@ -1183,10 +1176,7 @@ function renderGuidedDestState(){
       <div><div class="phase-title">${T.phase3_title}</div></div>
     </div>
     ${guidedHintBox(hint)}
-    <table class="proc-table">
-      <thead><tr><th>${T.patient_col}</th><th>${T.dest_col}</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
+    <div class="patients-grid">${cards}</div>
     ${validateBtnDest}`;
 }
 
