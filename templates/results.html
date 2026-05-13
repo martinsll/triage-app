@@ -9,7 +9,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-heigh
 .wrap{max-width:720px;margin:0 auto}
 h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
 .sub{font-size:13px;color:#888;margin-bottom:28px}
-.scores-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.scores-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px}
 .score-card{background:#fff;border:0.5px solid #e0ddd5;border-radius:12px;padding:14px;text-align:center}
 .score-label{font-size:11px;color:#888;margin-bottom:4px}
 .score-val{font-size:22px;font-weight:500}
@@ -37,32 +37,25 @@ h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
   <p class="sub">Participant: {{ sess.participant_id }} · Set {{ sess.set }} · {{ sess.created_at[:10] }}</p>
   {% endif %}
 
-  {% set ns = namespace(sel=0, proc=0, dest=0) %}
+  {% set ns = namespace(sel=0, dest=0) %}
   {% for grp_key, it in sess.iterations.items() %}
     {% if it.phase == 'test' or grp_key.startswith('test_') %}
     {% set sel_score = it.selection.final_score or (it.selection.attempts[-1].score if it.selection.attempts else '0/5') %}
-    {% set proc_score = it.processes.final_score or (it.processes.attempts[-1].score if it.processes.attempts else '0/5') %}
     {% set dest_score = it.destinations.final_score or (it.destinations.attempts[-1].score if it.destinations.attempts else '0/5') %}
     {% set ns.sel = ns.sel + sel_score.split('/')[0]|int %}
-    {% set ns.proc = ns.proc + proc_score.split('/')[0]|int %}
     {% set ns.dest = ns.dest + dest_score.split('/')[0]|int %}
     {% endif %}
   {% endfor %}
   {% set total_sel = ns.sel %}
-  {% set total_proc = ns.proc %}
   {% set total_dest = ns.dest %}
-  {% set total = total_sel + total_proc + total_dest %}
+  {% set total = total_sel + total_dest %}
   {% set max_each = sess.groups|length * 5 %}
-  {% set max_total = max_each * 3 %}
+  {% set max_total = max_each * 2 %}
 
   <div class="scores-grid">
     <div class="score-card">
       <div class="score-label">{% if language == 'es' %}Selección{% else %}Selection{% endif %}</div>
       <div class="score-val {{ 'ok' if total_sel == max_each else 'warn' if total_sel >= max_each*0.6 else 'bad' }}">{{ total_sel }}/{{ max_each }}</div>
-    </div>
-    <div class="score-card">
-      <div class="score-label">{% if language == 'es' %}Procesos{% else %}Processes{% endif %}</div>
-      <div class="score-val {{ 'ok' if total_proc == max_each else 'warn' if total_proc >= max_each*0.6 else 'bad' }}">{{ total_proc }}/{{ max_each }}</div>
     </div>
     <div class="score-card">
       <div class="score-label">{% if language == 'es' %}Destinos{% else %}Destinations{% endif %}</div>
@@ -79,9 +72,9 @@ h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
   <div class="group-block">
     <div class="group-title">{% if language == 'es' %}Grupo{% else %}Group{% endif %} {{ it.group }}</div>
     {% if language == 'es' %}
-      {% set phase_labels = [('Selección', it.selection), ('Procesos', it.processes), ('Destinos', it.destinations)] %}
+      {% set phase_labels = [('Selección', it.selection), ('Destinos', it.destinations)] %}
     {% else %}
-      {% set phase_labels = [('Selection', it.selection), ('Processes', it.processes), ('Destinations', it.destinations)] %}
+      {% set phase_labels = [('Selection', it.selection), ('Destinations', it.destinations)] %}
     {% endif %}
     {% for phase_name, phase_data in phase_labels %}
     <div class="phase-row">

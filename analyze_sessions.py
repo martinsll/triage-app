@@ -80,7 +80,7 @@ def flatten_label(row, label, iters):
     sorted_iters = sorted(label_iters.items(),
                           key=lambda x: int(x[1].get('group', x[0].split('_')[-1])))
 
-    total_sel = total_proc = total_dest = 0
+    total_sel = total_dest = 0
     total_rule_consult = 0
     total_rule_time_ms = 0
 
@@ -88,24 +88,22 @@ def flatten_label(row, label, iters):
     for _, it in sorted_iters:
         grp = it.get('group', 0)
         prefix = f'{label}_g{grp}'
-        for phase in ('selection', 'processes', 'destinations'):
+        for phase in ('selection', 'destinations'):
             ph = it.get(phase, {})
             att = ph.get('attempts', [])
             if att:
                 sc = safe_int(att[-1].get('score', 0)) or 0
                 rc = att[-1].get('rule_metrics', {}) or {}
-                if phase == 'selection':   total_sel  += sc
-                if phase == 'processes':   total_proc += sc
-                if phase == 'destinations':total_dest += sc
+                if phase == 'selection':    total_sel  += sc
+                if phase == 'destinations': total_dest += sc
                 if isinstance(rc, dict):
                     total_rule_consult += rc.get('total_consultations', 0)
                     total_rule_time_ms += rc.get('total_time_ms', 0)
 
     row[f'{label}_sel_total']     = total_sel
-    row[f'{label}_proc_total']    = total_proc
     row[f'{label}_dest_total']    = total_dest
-    row[f'{label}_total']         = total_sel + total_proc + total_dest
-    row[f'{label}_max']           = len(sorted_iters) * 15
+    row[f'{label}_total']         = total_sel + total_dest
+    row[f'{label}_max']           = len(sorted_iters) * 10
     row[f'{label}_rule_consult']  = total_rule_consult
     row[f'{label}_rule_time_sec'] = round(total_rule_time_ms / 1000, 1)
 
@@ -113,7 +111,7 @@ def flatten_label(row, label, iters):
     for _, it in sorted_iters:
         grp    = it.get('group', 0)
         prefix = f'{label}_g{grp}'
-        for phase in ('selection', 'processes', 'destinations'):
+        for phase in ('selection', 'destinations'):
             flatten_phase(row, prefix, it, phase)
 
 

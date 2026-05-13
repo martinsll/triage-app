@@ -40,26 +40,23 @@ tr:last-child td{border-bottom:none}
       <tr>
         <th>Participant</th><th>Set</th><th>Date</th><th>Groups</th>
         <th>Reading time</th>
-        <th>Selection</th><th>Processes</th><th>Destinations</th><th>Total</th><th>Status</th>
+        <th>Selection</th><th>Destinations</th><th>Total</th><th>Status</th>
       </tr>
     </thead>
     <tbody>
     {% for s in sessions %}
       {% set max_each = s.groups|length * 5 %}
-      {% set max_total = max_each * 3 %}
-      {% set ns = namespace(sel=0, proc=0, dest=0) %}
+      {% set max_total = max_each * 2 %}
+      {% set ns = namespace(sel=0, dest=0) %}
       {% for grp_key, it in s.iterations.items() %}
         {% set fs = it.selection.final_score or (it.selection.attempts[-1].score if it.selection.attempts else '0/5') %}
-        {% set fp = it.processes.final_score or (it.processes.attempts[-1].score if it.processes.attempts else '0/5') %}
         {% set fd = it.destinations.final_score or (it.destinations.attempts[-1].score if it.destinations.attempts else '0/5') %}
         {% set ns.sel = ns.sel + fs.split('/')[0]|int %}
-        {% set ns.proc = ns.proc + fp.split('/')[0]|int %}
         {% set ns.dest = ns.dest + fd.split('/')[0]|int %}
       {% endfor %}
       {% set total_sel = ns.sel %}
-      {% set total_proc = ns.proc %}
       {% set total_dest = ns.dest %}
-      {% set total = total_sel + total_proc + total_dest %}
+      {% set total = total_sel + total_dest %}
       <tr>
         <td><strong>{{ s.participant_id }}</strong></td>
         <td><span class="badge">Set {{ s.set }}</span></td>
@@ -71,7 +68,6 @@ tr:last-child td{border-bottom:none}
           {% else %}—{% endif %}
         </td>
         <td class="{{ 'ok' if total_sel==max_each else 'warn' if total_sel>=max_each*0.6 else 'bad' }}">{{ total_sel }}/{{ max_each }}</td>
-        <td class="{{ 'ok' if total_proc==max_each else 'warn' if total_proc>=max_each*0.6 else 'bad' }}">{{ total_proc }}/{{ max_each }}</td>
         <td class="{{ 'ok' if total_dest==max_each else 'warn' if total_dest>=max_each*0.6 else 'bad' }}">{{ total_dest }}/{{ max_each }}</td>
         <td class="{{ 'ok' if total==max_total else 'warn' if total>=max_total*0.6 else 'bad' }}"><strong>{{ total }}/{{ max_total }}</strong></td>
         <td><span class="badge {{ 'done-badge' if s.completed_at else '' }}">{{ 'complete' if s.completed_at else 'in progress' }}</span></td>
@@ -94,13 +90,12 @@ async function exportCSV(){
     let tSel=0,tProc=0,tDest=0;
     Object.values(s.iterations).forEach(it=>{
       const fs=it.selection.final_score||(it.selection.attempts.at(-1)?.score||'0/5');
-      const fp=it.processes.final_score||(it.processes.attempts.at(-1)?.score||'0/5');
       const fd=it.destinations.final_score||(it.destinations.attempts.at(-1)?.score||'0/5');
-      tSel+=parseInt(fs);tProc+=parseInt(fp);tDest+=parseInt(fd);
+      tSel+=parseInt(fs);tDest+=parseInt(fd);
     });
     rows.push([s.participant_id,s.set,s.groups.join('-'),s.created_at.slice(0,16),
-      `${tSel}/${maxEach}`,`${tProc}/${maxEach}`,`${tDest}/${maxEach}`,
-      `${tSel+tProc+tDest}/${maxEach*3}`,s.completed_at?'yes':'no']);
+      `${tSel}/${maxEach}`,`${tDest}/${maxEach}`,
+      `${tSel+tDest}/${maxEach*2}`,s.completed_at?'yes':'no']);
   });
   const csv=rows.map(r=>r.join(',')).join('\n');
   const a=document.createElement('a');

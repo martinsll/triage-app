@@ -39,7 +39,8 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-heigh
 .risk-tag{display:none}
 .vitals{font-size:11px;color:#555;font-family:monospace}
 .vital-row{display:flex;justify-content:space-between;padding:2px 0}
-.vital-warn{color:#555;font-weight:400}
+.vital-warn{color:#854F0B;font-weight:500}
+.vital-crit{color:#A32D2D;font-weight:500}
 .card-footer{display:flex;justify-content:space-between;font-size:10px;color:#888;margin-top:5px;padding-top:5px;border-top:0.5px solid #f0ede5}
 
 /* Slots */
@@ -114,7 +115,7 @@ select:focus{border-color:#378ADD}
       ⏱ Timed phase
     </div>
     <div class="progress" id="phase-progress"></div>
-    <button class="btn-rules" onclick="openRules()">{% if language == "es" %}Reglas{% else %}Rules{% endif %}</button>
+    <button id="rules-btn" class="btn-rules" onclick="openRules()">{% if language == "es" %}Reglas{% else %}Rules{% endif %}</button>
   </div>
 
   <div id="main-content"><div class="loading">{% if language == "es" %}Cargando pacientes...{% else %}Loading patients...{% endif %}</div></div>
@@ -312,7 +313,7 @@ const _T = {
     risk:{Critical:"Crítico",Moderate:"Moderado",Stable:"Estable"},
     alert:{Oriented:"Orientado",Confused:"Confuso",Lethargic:"Letárgico"},
     onset:{Sudden:"Súbito",Progressive:"Progresivo",Recurring:"Recurrente"},
-    mob:{"Non-Ambulatory":"No-Amb","Ambulatory":"Amb"},
+    mob:{"Non-Ambulatory":"No-Ambulatorio","Ambulatory":"Ambulatorio"},
     comp:{Accompanied:"Acompañado",Unaccompanied:"Sin Acomp."},
     coop:{Cooperative:"Cooperativo",Agitated:"Agitado"},
     phase1_title:"Orden de selección",phase1_hint:"Haz clic en una tarjeta de paciente, luego en una ranura para asignarla. Clic en una ranura ocupada para limpiarla.",
@@ -432,9 +433,11 @@ async function loadGroup(){
 function openRules(){
   STATE.ruleOpenedAt=now();
   document.getElementById('rules-overlay').style.display='block';
-  if(STATE.gamePhase==='test'){
+  if(STATE.gamePhase==='test' && STATE.phase!=='correction' && STATE.phase!=='final-feedback' && STATE.phase!=='dest-feedback'){
     document.getElementById('rules-backdrop').style.display='block';
     document.getElementById('main-content').style.pointerEvents='none';
+  } else {
+    document.getElementById('main-content').style.marginRight='440px';
   }
 }
 function closeRules(){
@@ -451,6 +454,7 @@ function closeRules(){
   document.getElementById('rules-overlay').style.display='none';
   document.getElementById('rules-backdrop').style.display='none';
   document.getElementById('main-content').style.pointerEvents='';
+  document.getElementById('main-content').style.marginRight='';
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeRules();});
 // ── CORRECTION SCREEN TIMING ──────────────────────────────────────────────────
@@ -458,6 +462,7 @@ function startCorrectionTimer(){
   STATE.correctionStart = now();
   STATE.correctionRuleTimeMs = 0;
   STATE.phase = 'correction';
+  updateRulesButton();
 }
 function getCorrectionData(){
   if(!STATE.correctionStart) return null;
@@ -490,9 +495,15 @@ function getPhaseTime(phase){
   return Math.round((stored+current)/1000);
 }
 // ── RENDER PHASE PROGRESS ────────────────────────────────────────────────────
+function updateRulesButton(){
+  const btn=document.getElementById('rules-btn');
+  if(!btn) return;
+  const isTestPlay=STATE.gamePhase==='test' && STATE.phase!=='correction' && STATE.phase!=='final-feedback' && STATE.phase!=='dest-feedback';
+  btn.style.display=isTestPlay?'none':'';
+}
 function renderPhaseProgress(){
-  const phases=[T.phase1_title, T.phase2_title, T.phase3_title];
-  const phaseMap={selection:0,processes:1,destinations:2,'proc-feedback':0,'dest-feedback':1,'final-feedback':2};
+  const phases=[T.phase1_title, T.phase3_title];
+  const phaseMap={selection:0,'dest-feedback':0,'final-feedback':1,destinations:1,'correction':1};
   const cur=phaseMap[STATE.phase]??0;
   document.getElementById('phase-progress').innerHTML=
     `<span style="font-size:11px;color:#888">${T.group_word} ${STATE.groupIndex+1}/${STATE.totalGroups}</span>`+
@@ -508,14 +519,23 @@ function isWarnVital(key,val){
   if(key==='temp'&&(val>38.0||val<35))return true;
   return false;
 }
+function isCritVital(key,val){
+  if(key==='hr'&&(val>130||val<40))return true;
+  if(key==='spo2'&&val<80)return true;
+  if(key==='rr'&&val>30)return true;
+  if(key==='temp'&&(val>39||val<35))return true;
+  return false;
+}
 const VITAL_UNITS={hr:' bpm',bp:' mmHg',spo2:'%',rr:'/min',temp:'°C'};
 const VITAL_LABELS_EN={hr:'HR',bp:'BP',spo2:'SpO2',rr:'RR',temp:'Temp'};
 const VITAL_LABELS_ES={hr:'FC',bp:'TA',spo2:'SpO2',rr:'FR',temp:'Temp'};
 
 function vitalRow(key,val){
-  const w=isWarnVital(key,val);
+  const crit=isCritVital(key,val);
+  const warn=!crit&&isWarnVital(key,val);
   const VL=LANG==='es'?VITAL_LABELS_ES:VITAL_LABELS_EN;
-  return`<div class="vital-row"><span>${VL[key]}</span><span class="${w?'vital-warn':''}">${val}${VITAL_UNITS[key]}</span></div>`;
+  const bg=crit?'background:#FCEBEB;color:#A32D2D;font-weight:500':warn?'background:#FAEEDA;color:#854F0B;font-weight:500':'';
+  return`<div class="vital-row"><span style="color:#888">${VL[key]}</span><span style="padding:1px 4px;border-radius:3px;${bg}">${val}${VITAL_UNITS[key]}</span></div>`;
 }
 
 const COND_BG={
@@ -541,8 +561,10 @@ function renderPatientCard(p,opts={}){
         ${vitalRow('hr',p.hr)}${vitalRow('bp',p.bp)}${vitalRow('spo2',p.spo2)}
         ${vitalRow('rr',p.rr)}${vitalRow('temp',p.temp)}
       </div>
-      <div class="card-footer">
-        <span>${tOnset(p.onset)}</span><span>${tAlert(p.alertness)}</span><span>${mobShort}</span>
+      <div class="card-footer" style="display:block;font-size:11px;line-height:1.9">
+        <div><span style="color:#aaa;min-width:58px;display:inline-block">${LANG==='es'?'Inicio':'Onset'}</span><span style="margin-left:10px">${tOnset(p.onset)}</div>
+        <div><span style="color:#aaa;min-width:58px;display:inline-block">${LANG==='es'?'Conciencia':'Alertness'}</span><span style="margin-left:10px">${tAlert(p.alertness)}</div>
+        <div><span style="color:#aaa;min-width:58px;display:inline-block">${LANG==='es'?'Movilidad':'Mobility'}</span><span style="margin-left:10px">${mobShort}</div>
       </div>
     </div>`;
 }
@@ -551,6 +573,7 @@ function renderPatientCard(p,opts={}){
 function renderSelection(){
   STATE.phase='selection';
   renderPhaseProgress();
+  updateRulesButton();
   const assignedPids=new Set(Object.values(STATE.selection));
   const unassigned=STATE.patients
     .filter(p=>!assignedPids.has(p.pid))
@@ -638,7 +661,7 @@ async function submitSelection(){
 }
 
 function renderSelectionFeedback(data,placed){
-  STATE.phase='proc-feedback';
+  STATE.phase='dest-feedback';
   renderPhaseProgress();
   startCorrectionTimer();
   const scoreClass=data.score===5?'score-ok':data.score>=3?'score-warn':'score-bad';
@@ -656,7 +679,7 @@ function renderSelectionFeedback(data,placed){
     errHtml=`<p style="font-size:12px;color:#3B6D11;margin-top:8px">${T.all_sel_correct}</p>`;
   }
 
-  const btnHtml=`<button class="btn btn-primary" onclick="finishCorrectionAndRenderProcesses()">${T.btn_next_proc}</button>`;
+  const btnHtml=`<button class="btn btn-primary" onclick="finishCorrectionAndRenderDestinations()">${T.btn_next_dest}</button>`;
 
   document.getElementById('main-content').innerHTML=`
     <div class="phase-banner">
@@ -681,7 +704,7 @@ function renderSelectionFeedback(data,placed){
 // ── CORRECTION NEXT HANDLERS ──────────────────────────────────────────────────
 async function finishCorrectionAndRenderProcesses(){
   await sendCorrectionData('selection');
-  renderProcesses();
+  renderDestinations();
 }
 async function finishCorrectionAndRenderDestinations(){
   await sendCorrectionData('processes');
@@ -712,8 +735,9 @@ function vitalMini(p){
     ['temp','Temp',        p.temp,'°C']
   ];
   return keys.map(([k,l,v,u])=>{
-    const w=isWarnVital(k,v);
-    return`<span style="margin-right:8px"><span style="color:#aaa">${l} </span><span class="${w?'vital-inline-warn':''}">${v}${u}</span></span>`;
+    const crit=isCritVital(k,v);
+    const w=!crit&&isWarnVital(k,v);
+    return`<span style="margin-right:8px"><span style="color:#aaa">${l} </span><span class="${crit?'vital-crit':w?'vital-warn':''}">${v}${u}</span></span>`;
   }).join('');
 }
 
@@ -733,7 +757,7 @@ function renderProcesses(){
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
           <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${p.condition}</span>
-          ${riskTag(p.risk)}
+          {/* to reintroduce risk tag: add ${riskTag(p.risk)} here */}
         </div>
         <div class="patient-mini">${vitalMini(p)}</div>
         <div style="font-size:11px;color:#aaa;margin-top:2px">${tAlert(p.alertness)} · ${tOnset(p.onset)} · ${tMob(p.mobility)} · ${tComp(p.companion)} · ${tCoop(p.cooperation)}</div>
@@ -832,32 +856,25 @@ function renderProcessFeedback(data){
 function renderDestinations(){
   STATE.phase='destinations';
   renderPhaseProgress();
+  updateRulesButton();
   const orderedPids=STATE.correctOrder;
+  const orderNote=LANG==='es'
+    ?'Los pacientes están ordenados de mayor a menor prioridad (el primero es el más urgente).'
+    :'Patients are ordered from highest to lowest priority (top is most urgent).';
 
-  let rows='';
-  orderedPids.forEach(pid=>{
+  let cards='';
+  orderedPids.forEach((pid,idx)=>{
     const p=STATE.patients.find(x=>x.pid===pid);
     const cur=STATE.destinations[pid]||'';
     const opts=DESTINATIONS.map(d=>`<option value="${d}" ${cur===d?'selected':''}>${tDest(d)}</option>`).join('');
-    rows+=`<tr>
-      <td style="min-width:220px">
-        <div style="margin-bottom:4px">
-          <strong>${pid}</strong> ${p.name}
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
-          <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:${COND_BG[p.condition]};color:${COND_COLORS[p.condition]}">${p.condition}</span>
-          ${riskTag(p.risk)}
-          <span style="font-size:11px;color:#888">${tOnset(p.onset)}</span>
-        </div>
-        <div class="patient-mini">${vitalMini(p)}</div>
-        <div style="font-size:11px;color:#aaa;margin-top:2px">${tAlert(p.alertness)} · ${tMob(p.mobility)} · <strong style="color:#555">${tComp(p.companion)}</strong></div>
-      </td>
-      <td>
-        <select onchange="setDest('${pid}',this.value)">
+    cards+=`<div style="margin-bottom:12px">
+      ${renderPatientCard(p,{slot:idx+1})}
+      <div style="margin-top:6px">
+        <select style="width:100%;max-width:100%" onchange="setDest('${pid}',this.value)">
           <option value="">${T.select_dest}</option>${opts}
         </select>
-      </td>
-    </tr>`;
+      </div>
+    </div>`;
   });
 
   document.getElementById('main-content').innerHTML=`
@@ -866,10 +883,8 @@ function renderDestinations(){
       <div><div class="phase-title">${T.phase3_title}</div>
       <div class="phase-hint">${T.phase3_hint}</div></div>
     </div>
-    <table class="dest-table">
-      <thead><tr><th>${T.patient_col}</th><th>${T.dest_col}</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
+    <div style="font-size:12px;color:#666;background:#f5f4f0;border-radius:8px;padding:8px 12px;margin-bottom:12px">${orderNote}</div>
+    <div class="patients-grid">${cards}</div>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="submitDestinations()">${T.btn_validate_dest}</button>
     </div>`;
@@ -919,6 +934,13 @@ function renderDestFeedback(data){
     <div class="feedback-box">
       <h3>${T.score_prefix} <span class="${scoreClass} score-line">${data.score}/5</span></h3>
       ${errHtml}
+    </div>
+    <div class="patients-grid">
+      ${STATE.correctOrder.map(pid=>{
+        const p=STATE.patients.find(x=>x.pid===pid);
+        const ok=!data.errors.find(e=>e.pid===pid);
+        return renderPatientCard(p,{slot:STATE.correctOrder.indexOf(pid)+1,showCorrect:true,correct:ok});
+      }).join('')}
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="finishCorrectionAndCompleteGroup()">${T.btn_next_group}</button>
@@ -1027,7 +1049,7 @@ async function autoSubmitGuidedSelection(){
       phase_time_sec:getPhaseTime('selection'),rule_metrics:getRuleMetrics()})});
   await res.json();
   STATE.selectionDone=true;
-  renderGuidedProcesses();
+  renderGuidedDestinations();
 }
 
 // GUIDED PROCESSES

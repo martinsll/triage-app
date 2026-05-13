@@ -137,7 +137,6 @@ def ensure_iteration(sess, group, phase="train"):
         sess["iterations"][key] = {
             "group": group,
             "selection":    {"attempts": [], "final_score": None, "questions_asked": 0},
-            "processes":    {"attempts": [], "final_score": None},
             "destinations": {"attempts": [], "final_score": None},
             "phase": phase,
             "phase": phase,
@@ -304,7 +303,6 @@ def api_group_patients():
         "phase": session.get("phase", "train"),
         "patients": [patient_for_client(p, set_label) for p in patients],
         "correct_order": pids,
-        "correct_processes":    {pid: correct_processes_for(set_label, pid) for pid in pids},
         "correct_destinations": {pid: correct_destination_for(set_label, pid) for pid in pids},
     })
 
@@ -358,6 +356,9 @@ def api_validate():
         }
 
     elif phase == "processes":
+        # Processes phase removed — skip silently
+        return jsonify({"ok": True, "score": "5/5", "errors": [], "skipped": True})
+    elif phase == "PROCESSES_DISABLED_":
         lang = session.get("language","en")
         score, errors = validate_processes(set_label, group, answers, lang)
         attempt_num = len(it["processes"]["attempts"]) + 1
