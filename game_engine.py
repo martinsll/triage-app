@@ -58,10 +58,10 @@ ARUCO_TO_PID = _build_aruco_db()
 ITERATIONS   = CORRECT_ORDERS  # same structure: {set: {group: [pids]}}
 
 PROCESS_NAMES = {
-    50: "Call Rapid Response",
-    51: "Request Stretcher",
-    52: "Direct Companion to Waiting Bay",
-    53: "Request Interpreter/Support",
+    50: "Rapid Response",
+    51: "Stretcher",
+    52: "Companion Bay",
+    53: "Interpreter",
 }
 
 # CORRECT_PROCESSES and CORRECT_DESTINATIONS now come from rules_engine

@@ -51,6 +51,13 @@ PROCESS_NAMES = {
     53: "Interpreter",
 }
 
+ARUCO_TO_PROCESS = {
+    50: "Rapid Response",
+    51: "Stretcher", 
+    52: "Companion Bay",
+    53: "Interpreter",
+}
+
 PATIENT_DB = {
     10:("A","P01"), 11:("A","P02"), 12:("A","P03"), 13:("A","P04"),
     14:("A","P05"), 15:("A","P06"), 16:("A","P07"), 17:("A","P08"),
@@ -296,8 +303,11 @@ def main():
                     del process_counter[key]
 
         # Convert stable_processes sets to sorted lists for engine
-        process_state = {pid: sorted(procs)
+        process_state = {pid: sorted(ARUCO_TO_PROCESS.get(p,p) for p in procs)
                          for pid, procs in stable_processes.items()}
+        
+        process_state_integer = {}
+        process_state_integer = {pid: sorted(procs) for pid, procs in stable_processes.items()}
 
         # Debug: print raw vs stable if they differ
         if raw_process_state != {p: sorted(s)
@@ -317,8 +327,10 @@ def main():
                     last_status = ""  # force reprint only after speech
 
         # ── Status line — only reprint when changed ────────────────────────
-        status = format_status(engine, board_state, process_state,
+
+        status = format_status(engine, board_state, process_state_integer,
                                len(corner_markers), board_found)
+        
         if status != last_status:
             print(f"\r{status:<120}", end="", flush=True)
             last_status = status
