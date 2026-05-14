@@ -132,25 +132,6 @@ select:focus{border-color:#378ADD}
       <button onclick="closeRules()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;line-height:1;padding:0 4px">×</button>
     </div>
 
-    <!-- VITAL THRESHOLDS -->
-    <div style="font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px">{% if language == "es" %}Umbrales de constantes vitales{% else %}Vital Thresholds{% endif %}</div>
-    <table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:16px">
-      <thead><tr style="background:#f5f4f0">
-        <th style="padding:5px 8px;text-align:left;border:0.5px solid #e0ddd5">{% if language == "es" %}Vital{% else %}Vital{% endif %}</th>
-        <th style="padding:5px 8px;text-align:center;border:0.5px solid #e0ddd5;color:#3B6D11">{% if language == "es" %}Normal{% else %}Normal{% endif %}</th>
-        <th style="padding:5px 8px;text-align:center;border:0.5px solid #e0ddd5;color:#854F0B">{% if language == "es" %}Anormal{% else %}Abnormal{% endif %}</th>
-        <th style="padding:5px 8px;text-align:center;border:0.5px solid #e0ddd5;color:#A32D2D">{% if language == "es" %}Crítico{% else %}Critical{% endif %}</th>
-      </tr></thead>
-      <tbody>
-        <tr><td style="padding:4px 8px;border:0.5px solid #e0ddd5">{% if language == "es" %}FC (lpm){% else %}HR (bpm){% endif %}</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">60–100</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">101–130</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">&gt;130 {% if language == "es" %}o{% else %}or{% endif %} &lt;40</td></tr>
-        <tr style="background:#f9f8f6"><td style="padding:4px 8px;border:0.5px solid #e0ddd5">{% if language == "es" %}TA (mmHg){% else %}BP (mmHg){% endif %}</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">90–140</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">&gt;140 {% if language == "es" %}o{% else %}or{% endif %} &lt;90</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">—</td></tr>
-        <tr><td style="padding:4px 8px;border:0.5px solid #e0ddd5">SpO2 (%)</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">≥91</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">81–90</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">&lt;80</td></tr>
-        <tr style="background:#f9f8f6"><td style="padding:4px 8px;border:0.5px solid #e0ddd5">{% if language == "es" %}FR (/min){% else %}RR (/min){% endif %}</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">11–20</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">21–30</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">&gt;30</td></tr>
-        <tr><td style="padding:4px 8px;border:0.5px solid #e0ddd5">Temp (°C)</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">36–38</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">38–39</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">&gt;39 {% if language == "es" %}o{% else %}or{% endif %} &lt;35</td></tr>
-        <tr style="background:#f9f8f6"><td style="padding:4px 8px;border:0.5px solid #e0ddd5">{% if language == "es" %}Conciencia{% else %}Alertness{% endif %}</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">{% if language == "es" %}Orientado{% else %}Oriented{% endif %}</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">{% if language == "es" %}Confuso{% else %}Confused{% endif %}</td><td style="padding:4px 8px;text-align:center;border:0.5px solid #e0ddd5">{% if language == "es" %}Letárgico{% else %}Lethargic{% endif %}</td></tr>
-      </tbody>
-    </table>
-
     <!-- RISK DERIVATION -->
     <div style="font-size:11px;font-weight:600;color:#A32D2D;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">{% if language == "es" %}Riesgo Crítico{% else %}Critical Risk{% endif %}</div>
     <table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:6px">
@@ -916,8 +897,15 @@ function renderDestFeedback(data){
     <div class="patients-grid">
       ${STATE.correctOrder.map(pid=>{
         const p=STATE.patients.find(x=>x.pid===pid);
-        const ok=!data.errors.find(e=>e.pid===pid);
-        return renderPatientCard(p,{slot:STATE.correctOrder.indexOf(pid)+1,showCorrect:true,correct:ok});
+        const err=data.errors.find(e=>e.pid===pid);
+        const ok=!err;
+        const placed=STATE.destinations[pid]||'—';
+        const correct=err?err.expected:placed;
+        const destLine=ok
+          ?`<div style="margin-top:6px;padding:4px 8px;border-radius:4px;background:#EAF3DE;color:#3B6D11;font-size:11px;font-weight:500">${tDest(placed)}</div>`
+          :`<div style="margin-top:6px;padding:4px 8px;border-radius:4px;background:#FCEBEB;color:#A32D2D;font-size:11px"><span style="text-decoration:line-through">${tDest(placed)}</span></div>
+           <div style="padding:4px 8px;border-radius:4px;background:#EAF3DE;color:#3B6D11;font-size:11px;font-weight:500">→ ${tDest(correct)}</div>`;
+        return `<div>${renderPatientCard(p,{slot:STATE.correctOrder.indexOf(pid)+1,showCorrect:true,correct:ok})}${destLine}</div>`;
       }).join('')}
     </div>
     <div class="btn-row">
@@ -951,6 +939,7 @@ function renderGuidedSelection(){
   STATE.phase='selection';
   STATE.guidedStep=0;
   renderPhaseProgress();
+  updateRulesButton();
   renderGuidedSelectionState();
 }
 

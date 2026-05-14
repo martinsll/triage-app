@@ -125,20 +125,20 @@
   <div class="section-label">{% if language == 'es' %}Experiencia con el robot{% else %}Robot experience{% endif %}</div>
 
   <div class="question" id="q7">
-    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 7</div>
+    <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question {% endif %} 7</div>
     <div class="q-text">
       {% if language == 'es' %}
-      ¿Crees que habrías aprendido mejor las reglas de triaje sin la guía del robot, trabajando de forma independiente?
+      Después de completar el entrenamiento con el robot, ¿cómo crees que habría sido tu rendimiento si una aplicación en pantalla te hubiera guiado en su lugar?
       {% else %}
-      Do you think you would have learned the triage rules more effectively without the robot's guidance, working through the task independently?
+      After completing the triage training with the robot, how do you think your performance would have compared if an on-screen application had guided you instead?
       {% endif %}<span class="required">*</span>
     </div>
-    <div class="mc-opts" data-q="q7">
-      <div class="mc-opt" data-val="yes_definitely">{% if language == 'es' %}Sí, definitivamente{% else %}Yes, definitely{% endif %}</div>
-      <div class="mc-opt" data-val="yes_probably">{% if language == 'es' %}Sí, probablemente{% else %}Yes, probably{% endif %}</div>
-      <div class="mc-opt" data-val="no_difference">{% if language == 'es' %}No habría diferencia{% else %}No difference{% endif %}</div>
-      <div class="mc-opt" data-val="no_probably">{% if language == 'es' %}No, probablemente no{% else %}No, probably not{% endif %}</div>
-      <div class="mc-opt" data-val="no_definitely">{% if language == 'es' %}No, definitivamente no{% else %}No, definitely not{% endif %}</div>
+    <div class="likert" data-q="q7">
+      <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">{% if language == 'es' %}Mucho peor{% else %}Much worse{% endif %}</span></div>
+      <div class="likert-opt" data-val="2">2<br><span style="font-size:9px">{% if language == 'es' %}Algo peor{% else %}Somewhat worse{% endif %}</span></div>
+      <div class="likert-opt" data-val="3">3<br><span style="font-size:9px">{% if language == 'es' %}Sin diferencia{% else %}No difference{% endif %}</span></div>
+      <div class="likert-opt" data-val="4">4<br><span style="font-size:9px">{% if language == 'es' %}Algo mejor{% else %}Somewhat better{% endif %}</span></div>
+      <div class="likert-opt" data-val="5">5<br><span style="font-size:9px">{% if language == 'es' %}Mucho mejor{% else %}Much better{% endif %}</span></div>
     </div>
   </div>
 

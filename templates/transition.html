@@ -25,36 +25,36 @@ h1{font-size:24px;font-weight:500;color:#1a1a1a;margin-bottom:12px}
 <body>
 <div class="card">
   {% if language == 'es' %}
-  <div class="phase-badge">FASE 2 — CRONOMETRADA</div>
+  <div class="phase-badge">FASE 2 — PRUEBA</div>
   <div class="done-badge">✓ Fase de entrenamiento completada</div>
   <h1>Ahora empieza la fase de evaluación</h1>
   <p class="lead">Vas a triar un nuevo grupo de pacientes. Esta vez tu rendimiento será medido.</p>
   <div class="rules-box">
     <h3>Para esta fase</h3>
     <ul>
-      <li>Trabaja lo más rápido y con la mayor precisión posible</li>
+      <li>Trabaja lo más rápido y con la mayor precisión posible.</li>
       <li>No tendrás acceso a las reglas mientras decides.</li>
       <li>Tendrás acceso a las reglas después de validar tus decisiones.</li>
-      <li>Los pacientes son distintos a los de la fase de entrenamiento</li>
+      <li>Los pacientes son distintos a los de la fase de entrenamiento.</li>
     </ul>
   </div>
   <button class="start-btn" onclick="startTest()">Comenzar fase cronometrada →</button>
   {% else %}
-  <div class="phase-badge">PHASE 2 — TIMED</div>
+  <div class="phase-badge">PHASE 2 — TEST</div>
   <div class="done-badge">✓ Training phase complete</div>
   <h1>Now it's time to be tested</h1>
   <p class="lead">You will now triage a new group of patients. This time your performance is being measured.</p>
   <div class="rules-box">
     <h3>For this phase</h3>
     <ul>
-      <li>Work as quickly and accurately as possible</li>
+      <li>Work as quickly and accurately as possible.</li>
       <li>You won't have access to the rules while you choose.</li>
-      <li>You will have access to the rules during after you validate your choices.</li>
-      <li>The patients are different from the training phase</li>
+      <li>You will have access to the rules after you validate your choices.</li>
+      <li>The patients are different from the training phase.</li>
     </ul>
   </div>
 
-  <button class="start-btn" onclick="startTest()">Begin timed phase →</button>
+  <button class="start-btn" onclick="startTest()">Begin test phase →</button>
   {% endif %}
 </div>
 <script>

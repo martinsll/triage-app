@@ -77,7 +77,7 @@ tr:nth-child(even) td{background:#f9f8f6}
     <div class="card">
       {% if language == 'es' %}
       <h1>Bienvenido al Entrenamiento de Triaje</h1>
-      <p class="lead">Eres un aprendiz en la sala de emergencias de un hospital. Vas a tener grupos de pacientes generados para este ejercicio. Los grupos son de cinco pacientes y vas a tener una fase de entrenamiento y una fase de prueba. Para cada grupo de pacientes, vas a tener 3 fases en las que tomarás distintas decisiones sobre qué hacer con cada paciente. Cada tarjeta de paciente muestra un conjunto de valores clínicos: frecuencia cardíaca, presión arterial, saturación de oxígeno, frecuencia respiratoria, temperatura, nivel de conciencia, inicio de síntomas, movilidad y contexto social.</p>
+      <p class="lead">Eres un aprendiz en la sala de emergencias de un hospital. Vas a tener grupos de pacientes generados para este ejercicio. Los grupos son de cinco pacientes y vas a tener una fase de entrenamiento y una fase de prueba. Para cada grupo de pacientes, vas a tener 2 fases en las que tomarás distintas decisiones sobre qué hacer con cada paciente. Cada tarjeta de paciente muestra un conjunto de valores clínicos: frecuencia cardíaca, presión arterial, saturación de oxígeno, frecuencia respiratoria, temperatura, nivel de conciencia, inicio de síntomas, ymovilidad.</p>
       <h2>Información del paciente en cada tarjeta</h2>
       <table>
         <thead><tr><th>Variable</th><th>Descripción</th></tr></thead>
@@ -94,17 +94,17 @@ tr:nth-child(even) td{background:#f9f8f6}
       </table>
       <p class="lead">Usarás estos valores junto con las reglas de triaje (explicadas en la página siguiente) para tomar tus decisiones.</p>
 
-      </p>Tomarás tres tipos de decisiones para cada grupo de cinco pacientes.</p>
+      </p>Tomarás dos tipos de decisiones para cada grupo de cinco pacientes.</p>
       <div class="phases">
         <div class="phase-box">
           <div class="phase-num">1</div>
           <div class="phase-title">Orden de selección</div>
-          <div class="phase-desc">Ordena los cinco pacientes de mayor a menor urgencia en base a su ficha de paciente.</div>
+          <div class="phase-desc">Ordena los cinco pacientes de mayor (izquierda) a menor (derecha) urgencia en base a su ficha de paciente.</div>
         </div>
         <div class="phase-box">
           <div class="phase-num">2</div>
           <div class="phase-title">Destinos</div>
-          <div class="phase-desc">Asigna cada paciente al destino hospitalario correcto.</div>
+          <div class="phase-desc">Utiliza las reglas para asignar cada paciente al destino hospitalario correcto.</div>
         </div>
       </div>
       <h2>Fases del juego</h2>
@@ -119,11 +119,11 @@ tr:nth-child(even) td{background:#f9f8f6}
       </div>
       <div class="note">
         <strong>Fase cronometrada (3 grupos de 5 pacientes)</strong><br>
-        Triará a los pacientes de forma autónoma, sin ayuda y <strong>sin acceso a las Reglas</strong>. Las reglas solo estaran disponbiles después validar cada paso. Su rendimiento será evaluado según dos criterios: la <strong>precisión</strong> de sus decisiones y la <strong>rapidez</strong> con la que complete cada grupo.
+        Triará a los pacientes de forma autónoma, sin ayuda y <strong>sin acceso a las Reglas</strong>. Las reglas solo estaran disponbiles después validar cada paso y se podran consultar sin limite de tiempo antes de avanzar al siguiente paso. Su rendimiento será evaluado según dos criterios: la <strong>precisión</strong> de sus decisiones y la <strong>rapidez</strong> con la que complete cada grupo.
       </div>
       {% else %}
    <h1>Welcome to the Triage Training</h1>
-      <p class="lead">You are a trainee in a hospital emergency department. You will work with groups of simulated patients, generated for this exercise. The groups consist of five patients and you will go through a training phase followed by a test phase. For each group of patients, you will go through 3 phases in which you will make different decisions about what to do with each patient. Each patient card shows a set of clinical values: heart rate, blood pressure, oxygen saturation, respiratory rate, temperature, alertness, onset, mobility, and social context.</p>
+      <p class="lead">You are a trainee in a hospital emergency department. You will work with groups of simulated patients, generated for this exercise. The groups consist of five patients and you will go through a training phase followed by a test phase. For each group of patients, you will go through 2 phases in which you will make different decisions about what to do with each patient. Each patient card shows a set of clinical values: heart rate, blood pressure, oxygen saturation, respiratory rate, temperature, alertness, onset and mobility.</p>
       <h2>Patient information on each card</h2>
       <table>
         <thead><tr><th>Variable</th><th>Description</th></tr></thead>
@@ -140,17 +140,17 @@ tr:nth-child(even) td{background:#f9f8f6}
       </table>
       <p class="lead">You will use these values together with the triage rules (explained on the next page) to make your decisions.</p>
 
-      <p>You will make three types of decisions for each group of five patients.</p>
+      <p>You will make two types of decisions for each group of five patients.</p>
       <div class="phases">
         <div class="phase-box">
           <div class="phase-num">1</div>
           <div class="phase-title">Selection order</div>
-          <div class="phase-desc">Rank the five patients in the order they should be seen, from most to least urgent based on the patient card.</div>
+          <div class="phase-desc">Rank the five patients in the order they should be seen, from most (left) to least (right) urgent based on the patient card.</div>
         </div>
         <div class="phase-box">
           <div class="phase-num">2</div>
           <div class="phase-title">Destinations</div>
-          <div class="phase-desc">Assign each patient to the correct hospital destination.</div>
+          <div class="phase-desc">Use the rules to assign each patient to the correct hospital destination.</div>
         </div>
       </div>
       <h2>Game phases</h2>
@@ -164,8 +164,8 @@ tr:nth-child(even) td{background:#f9f8f6}
         {% endif %}
       </div>
       <div class="note">
-        <strong>Timed phase (3 groups of 5 patients)</strong><br>
-        You will triage patients independently, without assistance and <strong>without access to the Rules</strong>. The Rules will only be accessible after validation of each step. Your performance will be assessed on two criteria: the <strong>accuracy</strong> of your decisions and the <strong>speed</strong> with which you complete each group.
+        <strong>Test phase (3 groups of 5 patients)</strong><br>
+        You will triage patients independently, without assistance and <strong>without access to the Rules</strong>. The Rules will only be accessible after validation of each stepand you have no time limit to check them before proceeding to the next step. Your performance will be assessed on two criteria: the <strong>accuracy</strong> of your decisions and the <strong>speed</strong> with which you complete each group.
       </div>
       {% endif %}
     </div>
@@ -182,7 +182,7 @@ tr:nth-child(even) td{background:#f9f8f6}
     <div class="card">
       {% if language == 'es' %}
       <h1>Reglas de Triaje</h1>
-      <p class="lead">Estas son las reglas que aplicará durante el juego. Léalas con atención — puede consultarlas en cualquier momento usando el botón <strong>Reglas</strong>.</p>
+      <p class="lead">Estas son las reglas que aplicará durante el juego. Léalas con atención. Durante el juego se podrá acceder a ellas usando el botón <strong>Reglas</strong>. Durante la fase de entrenamiento siempre estarán disponibles; sin embargo, en la fase de prueba no podrán consultarse mientras se toman las decisiones.</p>
 
       <h2>1. Umbrales de constantes vitales</h2>
       <p>Cada constante vital tiene uno de tres niveles. El nivel determina si contribuye al riesgo del paciente. No todas las constantes son relevantes para cada condición — aplique solo las reglas de la condición específica del paciente.</p>
@@ -276,8 +276,7 @@ tr:nth-child(even) td{background:#f9f8f6}
       {% else %}
 
       <h1>Triage Rules</h1>
-      <p class="lead">These are the rules you will apply during the game. Read them carefully — you can consult them at any time during play using the <strong>Rules</strong> button.</p>
-
+      <p class="lead">These are the rules you will apply during the game. Please read them carefully. You will be able to access them at any time using the <strong>Rules</strong> button. During the training phase, the rules will always be available; however, during the test phase they cannot be consulted while making decisions.</p>
       <h2>1. Vital sign thresholds</h2>
       <p>Each vital sign falls into one of three levels. The level determines whether it contributes to a patient's risk. Note that not all vitals are relevant for every condition — only apply the rules for the patient's specific condition.</p>
       <table>
