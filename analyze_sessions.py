@@ -204,7 +204,8 @@ def main():
     all_keys = list(dict.fromkeys(k for row in rows for k in row))
 
     os.makedirs(args.out, exist_ok=True)
-    out_path = os.path.join(args.out, 'triage_data.csv')
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    out_path = os.path.join(args.out, f'triage_data_{timestamp}.csv')
     with open(out_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=all_keys, extrasaction='ignore')
         writer.writeheader()
