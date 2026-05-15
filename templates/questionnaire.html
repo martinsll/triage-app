@@ -147,12 +147,12 @@
   <!-- SECTION 3 -->
   <div class="section-label">{% if language == 'es' %}Experiencia comparativa{% else %}Comparative experience{% endif %}</div>
 
-  <div class="question" id="q10">
+  <div class="question" id="q7">
     <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 7</div>
     <div class="q-text">
       {% if language == 'es' %}Después de completar el entrenamiento con la aplicación en pantalla, ¿cómo crees que habría sido tu rendimiento si un robot te hubiera guiado en su lugar?{% else %}After completing the triage training with the on-screen application, how do you think your performance would have compared if a robot had guided you instead?{% endif %}<span class="required">*</span>
     </div>
-    <div class="likert" data-q="q10">
+    <div class="likert" data-q="q7">
       <div class="likert-opt" data-val="1">1<br><span style="font-size:9px">{% if language == 'es' %}Mucho peor{% else %}Much worse{% endif %}</span></div>
       <div class="likert-opt" data-val="2">2<br><span style="font-size:9px">{% if language == 'es' %}Algo peor{% else %}Somewhat worse{% endif %}</span></div>
       <div class="likert-opt" data-val="3">3<br><span style="font-size:9px">{% if language == 'es' %}Sin diferencia{% else %}No difference{% endif %}</span></div>
@@ -164,16 +164,16 @@
   <!-- SECTION 4 -->
   <div class="section-label">{% if language == 'es' %}Preguntas abiertas{% else %}Open-ended{% endif %}</div>
 
-  <div class="question" id="q10">
+  <div class="question" id="q8">
     <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 8</div>
     <div class="q-text">{% if language == 'es' %}¿Cuál fue el aspecto más difícil de la tarea para ti?{% else %}What was the most difficult aspect of the task for you?{% endif %}</div>
-    <textarea data-q="q10" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
+    <textarea data-q="q8" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
   </div>
 
-  <div class="question" id="q10">
+  <div class="question" id="q9">
     <div class="q-num">{% if language == 'es' %}Pregunta{% else %}Question{% endif %} 9</div>
     <div class="q-text">{% if language == 'es' %}¿Qué te habría ayudado a aprender las reglas de triaje de forma más efectiva?{% else %}What would have helped you learn the triage rules more effectively?{% endif %}</div>
-    <textarea data-q="q10" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
+    <textarea data-q="q9" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
   </div>
 
   <div class="question" id="q10">
@@ -182,7 +182,7 @@
     <textarea data-q="q10" placeholder="{% if language == 'es' %}Escribe tu respuesta aquí...{% else %}Write your answer here...{% endif %}"></textarea>
   </div>
 
-  <button class="submit-btn" onclick="submitQuestionnaire()">
+    <button class="submit-btn" onclick="submitQuestionnaire()">
     {% if language == 'es' %}Enviar →{% else %}Submit →{% endif %}
   </button>
 </div>

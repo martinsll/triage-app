@@ -237,7 +237,7 @@ def api_submit_questionnaire():
     sid  = session.get("session_id")
     sess = load_session(sid)
     if not sess:
-        return jsonify({"ok": False}), 400
+        return jsonify({"ok": True})
     sess["questionnaire"] = {
         "answers":      data.get("answers", {}),
         "submitted_at": datetime.now(timezone.utc).isoformat(),
@@ -566,7 +566,7 @@ def api_start_robot():
     session["condition"]         = "robot"
     session["after_demographics"] = "/robot_ues"
     session["after_ues"]          = "/robot_nasa_tlx"
-    session["after_nasa_tlx"]     = "/robot_questionnaire"
+    session["after_nasa_tlx"]     = "/trust_questionnaire"
     session["mode"]              = "robot"
 
     return jsonify({"ok": True, "redirect": "/robot_demographics"})
@@ -592,6 +592,28 @@ def robot_nasa_tlx():
         return redirect(url_for("robot_index"))
     return render_template("nasa_tlx.html",
         language=session.get("language","en"))
+
+
+@app.route("/trust_questionnaire")
+def trust_questionnaire():
+    if "session_id" not in session:
+        return redirect(url_for("robot_index"))
+    return render_template("trust_questionnaire.html",
+        language=session.get("language","en"))
+
+@app.route("/api/submit_trust", methods=["POST"])
+def api_submit_trust():
+    data = request.json
+    sid  = session.get("session_id")
+    sess = load_session(sid)
+    if not sess:
+        return jsonify({"ok": True})
+    sess["trust_questionnaire"] = {
+        "answers":      data.get("answers", {}),
+        "submitted_at": datetime.now(timezone.utc).isoformat(),
+    }
+    save_session(sess)
+    return jsonify({"ok": True})
 
 @app.route("/robot_questionnaire")
 def robot_questionnaire():

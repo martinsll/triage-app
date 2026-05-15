@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triage Training — {% if language == 'es' %}Confianza en el Robot{% else %}Trust in the Robot{% endif %}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:32px 24px}
+  .wrap{max-width:640px;margin:0 auto}
+  .header{margin-bottom:32px}
+  h1{font-size:22px;font-weight:500;color:#1a1a1a;margin-bottom:6px}
+  .sub{font-size:14px;color:#888;line-height:1.5;margin-bottom:6px}
+  .progress{font-size:12px;color:#aaa}
+  .question{background:#fff;border-radius:12px;border:0.5px solid #e0ddd5;padding:22px 24px;margin-bottom:14px;transition:border-color 0.2s}
+  .q-num{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px}
+  .q-text{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:16px;line-height:1.5}
+  .required{color:#E24B4A;margin-left:2px}
+  .likert7{display:flex;gap:6px;flex-wrap:wrap}
+  .likert7-opt{flex:1;min-width:40px;padding:8px 4px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:12px;text-align:center;cursor:pointer;transition:all 0.12s;color:#555;line-height:1.3}
+  .likert7-opt:hover{border-color:#888}
+  .likert7-opt.selected{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+  .scale-labels{display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:6px;padding:0 2px}
+  .section-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin:24px 0 10px}
+  .submit-btn{width:100%;padding:14px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-top:8px;transition:opacity 0.15s}
+  .submit-btn:hover{opacity:0.85}
+  .submit-btn:disabled{opacity:0.4;cursor:not-allowed}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    {% if language == 'es' %}
+    <h1>Confianza en el Robot</h1>
+    <p class="sub">Por favor indica tu grado de acuerdo con cada afirmación. No hay respuestas correctas o incorrectas.</p>
+    <p class="progress">Parte 2.5 de 3</p>
+    {% else %}
+    <h1>Trust in the Robot</h1>
+    <p class="sub">Please indicate how much you agree with each statement. There are no right or wrong answers.</p>
+    <p class="progress">Part 2.5 of 3</p>
+    {% endif %}
+  </div>
+
+  <div class="section-label">{% if language == 'es' %}Afirmaciones sobre el robot{% else %}Statements about the robot{% endif %}</div>
+
+  {% set questions_en = [
+    "The robot behaved predictably.",
+    "The robot was reliable.",
+    "The robot was competent.",
+    "I trusted the robot.",
+    "I could rely on the robot.",
+    "The robot performed consistently.",
+    "I felt confident working with the robot."
+  ] %}
+  {% set questions_es = [
+    "El robot se comportó de manera predecible.",
+    "El robot era fiable.",
+    "El robot era competente.",
+    "Confiaba en el robot.",
+    "Podía depender del robot.",
+    "El robot actuó de forma consistente.",
+    "Me sentí seguro/a trabajando con el robot."
+  ] %}
+
+  {% for i in range(1, 8) %}
+  <div class="question" id="t{{ i }}">
+    <div class="q-num">{% if language == 'es' %}Afirmación{% else %}Statement{% endif %} {{ i }}</div>
+    <div class="q-text">
+      {% if language == 'es' %}{{ questions_es[i-1] }}{% else %}{{ questions_en[i-1] }}{% endif %}<span class="required">*</span>
+    </div>
+    <div class="likert7" data-q="t{{ i }}">
+      {% for v in range(1, 8) %}
+      <div class="likert7-opt" data-val="{{ v }}">
+        {{ v }}
+        {% if v == 1 %}<br><span style="font-size:9px">{% if language == 'es' %}Muy en<br>desacuerdo{% else %}Strongly<br>disagree{% endif %}</span>
+        {% elif v == 4 %}<br><span style="font-size:9px">{% if language == 'es' %}Neutral{% else %}Neutral{% endif %}</span>
+        {% elif v == 7 %}<br><span style="font-size:9px">{% if language == 'es' %}Muy de<br>acuerdo{% else %}Strongly<br>agree{% endif %}</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <button class="submit-btn" id="submit-btn" onclick="submitTrust()">
+    {% if language == 'es' %}Siguiente →{% else %}Next →{% endif %}
+  </button>
+</div>
+<script>
+const answers = {};
+
+document.querySelectorAll('.likert7').forEach(group => {
+  group.querySelectorAll('.likert7-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      group.querySelectorAll('.likert7-opt').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      answers[group.dataset.q] = opt.dataset.val;
+      document.getElementById(group.closest('.question').id).style.borderColor = '';
+    });
+  });
+});
+
+async function submitTrust(){
+  const required = ['t1','t2','t3','t4','t5','t6','t7'];
+  const missing = required.filter(q => !answers[q]);
+  if(missing.length > 0){
+    missing.forEach(q => {
+      document.getElementById(q).style.borderColor = '#E24B4A';
+    });
+    document.getElementById(missing[0]).scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = '...';
+  await fetch('/api/submit_trust', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({answers})
+  });
+  window.location.href = '/robot_questionnaire';
+}
+</script>
+</body>
+</html>
