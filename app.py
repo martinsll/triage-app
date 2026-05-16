@@ -34,6 +34,26 @@ if os.environ.get('RAILWAY_ENVIRONMENT'):
         SESSION_COOKIE_HTTPONLY=True,
     )
 
+import smtplib
+from email.mime.text import MIMEText
+
+def email_session(sess):
+    try:
+        smtp_from = os.environ.get('SMTP_FROM')
+        smtp_pass = os.environ.get('SMTP_PASSWORD')
+        smtp_to   = os.environ.get('SMTP_TO')
+        if not all([smtp_from, smtp_pass, smtp_to]):
+            return
+        msg = MIMEText(json.dumps(sess, indent=2), 'plain', 'utf-8')
+        msg['Subject'] = f"Triage session: {sess.get('participant_id')} {sess.get('created_at','')[:10]}"
+        msg['From'] = smtp_from
+        msg['To']   = smtp_to
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as s:
+            s.login(smtp_from, smtp_pass)
+            s.send_message(msg)
+    except Exception as e:
+        print(f"[EMAIL] Failed: {e}")
+
 # ─── ADMIN AUTH ───────────────────────────────────────────────────────────────
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'triage2024')
 
@@ -243,6 +263,7 @@ def api_submit_questionnaire():
         "submitted_at": datetime.now(timezone.utc).isoformat(),
     }
     save_session(sess)
+    email_session(sess) 
     return jsonify({"ok": True})
 
 @app.route("/onboarding")
