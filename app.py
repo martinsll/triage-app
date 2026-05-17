@@ -42,7 +42,7 @@ def email_session(sess):
         if not api_key or not to_email:
             return
         payload = json.dumps({
-            "from": "triage@resend.dev",
+            "from": "onboarding@resend.dev",
             "to": [to_email],
             "subject": f"Triage session: {sess.get('participant_id')} {sess.get('created_at','')[:10]}",
             "text": json.dumps(sess, indent=2)
