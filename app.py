@@ -34,23 +34,25 @@ if os.environ.get('RAILWAY_ENVIRONMENT'):
         SESSION_COOKIE_HTTPONLY=True,
     )
 
-import smtplib
-from email.mime.text import MIMEText
-
+import urllib.request
 def email_session(sess):
     try:
-        smtp_from = os.environ.get('SMTP_FROM')
-        smtp_pass = os.environ.get('SMTP_PASSWORD')
-        smtp_to   = os.environ.get('SMTP_TO')
-        if not all([smtp_from, smtp_pass, smtp_to]):
+        api_key = os.environ.get('RESEND_API_KEY')
+        to_email = os.environ.get('SMTP_TO')
+        if not api_key or not to_email:
             return
-        msg = MIMEText(json.dumps(sess, indent=2), 'plain', 'utf-8')
-        msg['Subject'] = f"Triage session: {sess.get('participant_id')} {sess.get('created_at','')[:10]}"
-        msg['From'] = smtp_from
-        msg['To']   = smtp_to
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as s:
-            s.login(smtp_from, smtp_pass)
-            s.send_message(msg)
+        payload = json.dumps({
+            "from": "triage@resend.dev",
+            "to": [to_email],
+            "subject": f"Triage session: {sess.get('participant_id')} {sess.get('created_at','')[:10]}",
+            "text": json.dumps(sess, indent=2)
+        }).encode()
+        req = urllib.request.Request(
+            'https://api.resend.com/emails',
+            data=payload,
+            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
+        )
+        urllib.request.urlopen(req, timeout=5)
     except Exception as e:
         print(f"[EMAIL] Failed: {e}")
 
