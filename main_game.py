@@ -221,7 +221,9 @@ def detect_all_markers(frame, detector):
     result = {}
     if ids is not None:
         for i, mid in enumerate(ids.flatten()):
-            result[int(mid)] = corners[i][0]
+            #result[int(mid)] = corners[i][0]   CANVI ARUCOS
+            mid = int(mid)
+            result.setdefault(mid, []).append(corners[i][0])
     return result
 
 # ─── BOARD GEOMETRY ───────────────────────────────────────────────────────────
@@ -230,10 +232,10 @@ def get_board_corners(markers):
         return None
     # Use centroid of each corner marker — stable regardless of orientation
     return np.array([
-        markers[0].mean(axis=0),  # centre of TL marker
-        markers[1].mean(axis=0),  # centre of TR marker
-        markers[2].mean(axis=0),  # centre of BL marker
-        markers[3].mean(axis=0),  # centre of BR marker
+        markers[0][0].mean(axis=0),  # centre of TL marker
+        markers[1][0].mean(axis=0),  # centre of TR marker
+        markers[2][0].mean(axis=0),  # centre of BL marker
+        markers[3][0].mean(axis=0),  # centre of BR marker
     ], dtype=np.float32)
 
 def compute_slots(board_corners, n=N_SLOTS):
@@ -289,16 +291,26 @@ def parse_scene(markers, board_corners):
     slot_to_patient   = {}   # slot_idx → pid
     slot_to_dest      = {}   # slot_idx → aruco_id (one per slot)
 
-    for aruco_id, corners in markers.items():
-        # Use majority corner voting for robust slot assignment
-        slot_idx = find_slot_majority(corners, slots)
+
+    for aruco_id, detections in markers.items():
+        for corners in detections:
+            slot_idx = find_slot_majority(corners, slots)
+            if slot_idx is None:
+                continue
+            if aruco_id in PATIENT_IDS:
+                _, pid = PATIENT_DB[aruco_id]
+                slot_to_patient[slot_idx] = pid
+            elif aruco_id in DEST_IDS:
+                slot_to_dest[slot_idx] = aruco_id
+
+        '''slot_idx = find_slot_majority(corners, slots)
         if slot_idx is None:
             continue
         if aruco_id in PATIENT_IDS:
             _, pid = PATIENT_DB[aruco_id]
             slot_to_patient[slot_idx] = pid
         elif aruco_id in DEST_IDS:
-            slot_to_dest[slot_idx] = aruco_id
+            slot_to_dest[slot_idx] = aruco_id'''
 
     board_state = {idx+1: pid for idx, pid in slot_to_patient.items()}
     dest_state  = {}
