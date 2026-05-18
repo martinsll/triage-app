@@ -216,7 +216,7 @@ def api_start():
     session["mode"]              = mode
     session["after_demographics"] = "/game"
     session["after_ues"]          = "/nasa_tlx"
-    session["after_nasa_tlx"]     = "/questionnaire"
+    session["after_nasa_tlx"]     = "/trust_questionnaire"
 
     return jsonify({"session_id": sess["session_id"], "ok": True,
                     "redirect": "/onboarding"})
@@ -630,7 +630,8 @@ def api_submit_trust():
     sid  = session.get("session_id")
     sess = load_session(sid)
     if not sess:
-        return jsonify({"ok": True})
+        next_url = '/robot_questionnaire' if sess.get('condition') == 'robot' else '/questionnaire'
+        return jsonify({"ok": True, "next": next_url})
     sess["trust_questionnaire"] = {
         "answers":      data.get("answers", {}),
         "submitted_at": datetime.now(timezone.utc).isoformat(),

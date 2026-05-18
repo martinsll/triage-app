@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Triage Training — {% if language == 'es' %}Confianza en el Robot{% else %}Trust in the Robot{% endif %}</title>
+<title>Triage Training — {% if language == 'es' %}Confianza en el Sistema{% else %}Trust in the System{% endif %}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:32px 24px}
@@ -20,7 +20,6 @@
   .likert7-opt{flex:1;min-width:40px;padding:8px 4px;border-radius:6px;border:0.5px solid #d0cdc5;background:#fff;font-size:12px;text-align:center;cursor:pointer;transition:all 0.12s;color:#555;line-height:1.3}
   .likert7-opt:hover{border-color:#888}
   .likert7-opt.selected{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
-  .scale-labels{display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:6px;padding:0 2px}
   .section-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin:24px 0 10px}
   .submit-btn{width:100%;padding:14px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-top:8px;transition:opacity 0.15s}
   .submit-btn:hover{opacity:0.85}
@@ -31,38 +30,48 @@
 <div class="wrap">
   <div class="header">
     {% if language == 'es' %}
-    <h1>Confianza en el Robot</h1>
-    <p class="sub">Por favor indica tu grado de acuerdo con cada afirmación. No hay respuestas correctas o incorrectas.</p>
+    <h1>Confianza en el Sistema</h1>
+    <p class="sub">Por favor indica en qué medida estás de acuerdo con cada afirmación. No hay respuestas correctas o incorrectas.</p>
     <p class="progress">Parte 2.5 de 3</p>
     {% else %}
-    <h1>Trust in the Robot</h1>
-    <p class="sub">Please indicate how much you agree with each statement. There are no right or wrong answers.</p>
+    <h1>Trust in the System</h1>
+    <p class="sub">Please indicate how much each statement applies to you. There are no right or wrong answers.</p>
     <p class="progress">Part 2.5 of 3</p>
     {% endif %}
   </div>
 
-  <div class="section-label">{% if language == 'es' %}Afirmaciones sobre el robot{% else %}Statements about the robot{% endif %}</div>
+  <div class="section-label">{% if language == 'es' %}Afirmaciones sobre el sistema{% else %}Statements about the system{% endif %}</div>
 
   {% set questions_en = [
-    "The robot behaved predictably.",
-    "The robot was reliable.",
-    "The robot was competent.",
-    "I trusted the robot.",
-    "I could rely on the robot.",
-    "The robot performed consistently.",
-    "I felt confident working with the robot."
+    "The system is deceptive.",
+    "The system behaves in an underhanded manner.",
+    "I am suspicious of the system's intent, action, or outputs.",
+    "I am wary of the system.",
+    "The system's actions will have a harmful or injurious outcome.",
+    "I am confident in the system.",
+    "The system provides security.",
+    "The system has integrity.",
+    "The system is dependable.",
+    "The system is reliable.",
+    "I can trust the system.",
+    "I am familiar with the system."
   ] %}
   {% set questions_es = [
-    "El robot se comportó de manera predecible.",
-    "El robot era fiable.",
-    "El robot era competente.",
-    "Confiaba en el robot.",
-    "Podía depender del robot.",
-    "El robot actuó de forma consistente.",
-    "Me sentí seguro/a trabajando con el robot."
+    "El sistema es engañoso.",
+    "El sistema actúa de manera deshonesta o con segundas intenciones.",
+    "Sospecho de las acciones del sistema.",
+    "Desconfío del sistema.",
+    "El sistema puede causar consecuencias perjudiciales.",
+    "Tengo confianza en el sistema.",
+    "El sistema proporciona seguridad.",
+    "El sistema actúa con integridad.",
+    "El sistema es fiable.",
+    "El sistema es confiable.",
+    "Puedo confiar en el sistema.",
+    "Estoy familiarizado/a con el sistema."
   ] %}
 
-  {% for i in range(1, 8) %}
+  {% for i in range(1, 13) %}
   <div class="question" id="t{{ i }}">
     <div class="q-num">{% if language == 'es' %}Afirmación{% else %}Statement{% endif %} {{ i }}</div>
     <div class="q-text">
@@ -72,9 +81,8 @@
       {% for v in range(1, 8) %}
       <div class="likert7-opt" data-val="{{ v }}">
         {{ v }}
-        {% if v == 1 %}<br><span style="font-size:9px">{% if language == 'es' %}Muy en<br>desacuerdo{% else %}Strongly<br>disagree{% endif %}</span>
-        {% elif v == 4 %}<br><span style="font-size:9px">{% if language == 'es' %}Neutral{% else %}Neutral{% endif %}</span>
-        {% elif v == 7 %}<br><span style="font-size:9px">{% if language == 'es' %}Muy de<br>acuerdo{% else %}Strongly<br>agree{% endif %}</span>
+        {% if v == 1 %}<br><span style="font-size:9px">{% if language == 'es' %}Nada{% else %}Not at all{% endif %}</span>
+        {% elif v == 7 %}<br><span style="font-size:9px">{% if language == 'es' %}Extrema-<br>damente{% else %}Extremely{% endif %}</span>
         {% endif %}
       </div>
       {% endfor %}
@@ -101,7 +109,7 @@ document.querySelectorAll('.likert7').forEach(group => {
 });
 
 async function submitTrust(){
-  const required = ['t1','t2','t3','t4','t5','t6','t7'];
+  const required = ['t1','t2','t3','t4','t5','t6','t7','t8','t9','t10','t11','t12'];
   const missing = required.filter(q => !answers[q]);
   if(missing.length > 0){
     missing.forEach(q => {
@@ -112,11 +120,12 @@ async function submitTrust(){
   }
   const btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = '...';
-  await fetch('/api/submit_trust', {
+  const res = await fetch('/api/submit_trust', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({answers})
   });
-  window.location.href = '/robot_questionnaire';
+  const data = await res.json();
+  window.location.href = data.next || '/questionnaire';
 }
 </script>
 </body>
