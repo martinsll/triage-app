@@ -95,46 +95,57 @@ def kendall_tau(placed_order: list, correct_order_: list) -> float:
 
 def phase_based_score(set_label: str, group: int, placed: dict) -> dict:
     """
-    Hierarchical scoring (max 9 points):
-      2 pts — all Critical patients before all Moderate
-      2 pts — all Moderate patients before all Stable
-      1 pt  — each patient in correct position within their risk tier (up to 5)
+    Granular selection scoring:
+      correct_critical:      Critical patients placed in a slot the correct answer assigns to Critical
+      correct_moderate:      Moderate patients placed in a slot the correct answer assigns to Moderate
+      correct_stable:        Stable patients placed in a slot the correct answer assigns to Stable
+      correct_slot_critical: Critical patients in exact correct slot
+      correct_slot_moderate: Moderate patients in exact correct slot
+      correct_slot_stable:   Stable patients in exact correct slot
 
     placed: {str(slot): pid}  e.g. {"1": "P01", "2": "P03", ...}
-    Returns dict with full breakdown.
     """
     correct = CORRECT_ORDERS[set_label][group]
     pid_to_risk = {pid: derive_risk(PID_TO_PATIENT[(set_label, pid)])
                    for pid in correct}
 
     placed_list = [placed.get(str(i + 1)) for i in range(5)]
+    correct_slot_risks = [pid_to_risk.get(pid) for pid in correct]
 
-    crit_pos = [i for i, pid in enumerate(placed_list) if pid and pid_to_risk.get(pid) == "Critical"]
-    mod_pos  = [i for i, pid in enumerate(placed_list) if pid and pid_to_risk.get(pid) == "Moderate"]
-    stab_pos = [i for i, pid in enumerate(placed_list) if pid and pid_to_risk.get(pid) == "Stable"]
+    correct_critical = correct_moderate = correct_stable = 0
+    correct_slot_crit = correct_slot_mod = correct_slot_stab = 0
 
-    crit_before_mod  = (not crit_pos or not mod_pos  or max(crit_pos) < min(mod_pos))
-    mod_before_stab  = (not mod_pos  or not stab_pos or max(mod_pos)  < min(stab_pos))
+    for i, placed_pid in enumerate(placed_list):
+        if not placed_pid:
+            continue
+        placed_risk  = pid_to_risk.get(placed_pid)
+        correct_risk = correct_slot_risks[i] if i < len(correct_slot_risks) else None
+        exact_correct = correct[i] if i < len(correct) else None
 
-    correct_within = 0
-    for risk_level in ("Critical", "Moderate", "Stable"):
-        correct_tier = [p for p in correct      if pid_to_risk.get(p) == risk_level]
-        placed_tier  = [p for p in placed_list  if p and pid_to_risk.get(p) == risk_level]
-        for i, pid in enumerate(correct_tier):
-            if i < len(placed_tier) and placed_tier[i] == pid:
-                correct_within += 1
+        if placed_risk == "Critical" and correct_risk == "Critical":
+            correct_critical += 1
+        elif placed_risk == "Moderate" and correct_risk == "Moderate":
+            correct_moderate += 1
+        elif placed_risk == "Stable" and correct_risk == "Stable":
+            correct_stable += 1
 
-    tier_score   = (2 if crit_before_mod else 0) + (2 if mod_before_stab else 0)
-    total        = tier_score + correct_within
+        if placed_pid == exact_correct:
+            if placed_risk == "Critical":
+                correct_slot_crit += 1
+            elif placed_risk == "Moderate":
+                correct_slot_mod += 1
+            elif placed_risk == "Stable":
+                correct_slot_stab += 1
+
     return {
-        "tier_ordering_score": tier_score,
-        "tier_ordering_max":   4,
-        "within_tier_score":   correct_within,
-        "within_tier_max":     5,
-        "total":               total,
-        "max":                 9,
-        "crit_before_mod":     crit_before_mod,
-        "mod_before_stab":     mod_before_stab,
+        "correct_critical":      correct_critical,
+        "correct_moderate":      correct_moderate,
+        "correct_stable":        correct_stable,
+        "correct_slot_critical": correct_slot_crit,
+        "correct_slot_moderate": correct_slot_mod,
+        "correct_slot_stable":   correct_slot_stab,
+        "total":                 correct_slot_crit + correct_slot_mod + correct_slot_stab,
+        "max":                   5,
     }
 
 # ─── VALIDATION ───────────────────────────────────────────────────────────────

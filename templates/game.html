@@ -354,6 +354,7 @@ async function loadGroup(){
   if(data.done){window.location.href='/results';return;}
   STATE.patients=data.patients;
   STATE.correctOrder=data.correct_order;
+  STATE.ruleConsultations=[];
   STATE.correctProcesses=data.correct_processes||null;
   STATE.correctDestinations=data.correct_destinations||null;
   STATE.group=data.group;
@@ -599,6 +600,7 @@ function handleSlotClick(slot){
 }
 
 async function submitSelection(){
+  closeRules();
   if(Object.keys(STATE.selection).length<5){
     alert('Please assign all 5 patients to slots first.');return;
   }
@@ -620,7 +622,7 @@ async function submitSelection(){
 }
 
 function renderSelectionFeedback(data,placed){
-  STATE.phase='dest-feedback';
+  STATE.phase='correction';
   renderPhaseProgress();
   startCorrectionTimer();
   const scoreClass=data.score===5?'score-ok':data.score>=3?'score-warn':'score-bad';
@@ -662,14 +664,17 @@ function renderSelectionFeedback(data,placed){
 
 // ── CORRECTION NEXT HANDLERS ──────────────────────────────────────────────────
 async function finishCorrectionAndRenderProcesses(){
+  closeRules();
   await sendCorrectionData('selection');
   renderDestinations();
 }
 async function finishCorrectionAndRenderDestinations(){
-  await sendCorrectionData('processes');
+  closeRules();
+  await sendCorrectionData('selection');
   renderDestinations();
 }
 async function finishCorrectionAndCompleteGroup(){
+  closeRules();
   await sendCorrectionData('destinations');
   completeGroup();
 }
@@ -775,7 +780,7 @@ async function submitProcesses(){
 }
 
 function renderProcessFeedback(data){
-  STATE.phase='dest-feedback';
+  STATE.phase='correction';
   renderPhaseProgress();
   startCorrectionTimer();
   const scoreClass=data.score===5?'score-ok':data.score>=3?'score-warn':'score-bad';
@@ -852,6 +857,7 @@ function renderDestinations(){
 function setDest(pid,val){STATE.destinations[pid]=val;}
 
 async function submitDestinations(){
+  closeRules();
   const phaseTimeSec=getPhaseTime('destinations');
   startPhaseTimer('final-feedback');
   const res=await fetch('/api/validate',{method:'POST',

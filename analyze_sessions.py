@@ -62,12 +62,15 @@ def flatten_phase(row, prefix, it, phase):
     row[f'{prefix}_{phase}_correction_rule_time_sec'] = round(corr.get('rule_time_ms', 0) / 1000, 1) if corr else 0
 
     if phase == 'selection':
-        row[f'{prefix}_kendall_tau']         = a.get('kendall_tau')
+        row[f'{prefix}_kendall_tau']           = a.get('kendall_tau')
         ps = a.get('phase_score', {})
         if isinstance(ps, dict):
-            row[f'{prefix}_phase_score']         = ps.get('total')
-            row[f'{prefix}_tier_ordering_score'] = ps.get('tier_ordering_score')
-            row[f'{prefix}_within_tier_score']   = ps.get('within_tier_score')
+            row[f'{prefix}_correct_critical']      = ps.get('correct_critical')
+            row[f'{prefix}_correct_moderate']      = ps.get('correct_moderate')
+            row[f'{prefix}_correct_stable']        = ps.get('correct_stable')
+            row[f'{prefix}_correct_slot_critical'] = ps.get('correct_slot_critical')
+            row[f'{prefix}_correct_slot_moderate'] = ps.get('correct_slot_moderate')
+            row[f'{prefix}_correct_slot_stable']   = ps.get('correct_slot_stable')
 
 
 def flatten_label(row, label, iters):
