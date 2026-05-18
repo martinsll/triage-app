@@ -204,7 +204,37 @@ def main():
     rows = [flatten_session(s) for s in sessions]
 
     # Collect all columns preserving insertion order
-    all_keys = list(dict.fromkeys(k for row in rows for k in row))
+    # Fixed column order
+    PHASES = ['selection', 'destinations']
+    SEL_EXTRA = ['kendall_tau','correct_critical','correct_moderate','correct_stable',
+                 'correct_slot_critical','correct_slot_moderate','correct_slot_stable']
+    PHASE_FIELDS = ['score','time_sec','rule_consult','rule_time_sec',
+                    'correction_time_sec','correction_rule_time_sec']
+
+    all_keys = [
+        'participant_id','condition','mode','language','set','created_at','completed_at',
+        'age','gender','education','robot_experience',
+        'instructions_time_sec','rules_time_sec','train_duration_sec','test_duration_sec',
+    ]
+    for label in ('train','test'):
+        all_keys += [f'{label}_sel_total',f'{label}_dest_total',f'{label}_total',
+                     f'{label}_max',f'{label}_rule_consult',f'{label}_rule_time_sec']
+        for grp in (1,2,3):
+            pfx = f'{label}_g{grp}'
+            for phase in PHASES:
+                for field in PHASE_FIELDS:
+                    all_keys.append(f'{pfx}_{phase}_{field}')
+                if phase == 'selection':
+                    for field in SEL_EXTRA:
+                        all_keys.append(f'{pfx}_{field}')
+    all_keys += [f'nasa_{d}' for d in ('mental','physical','temporal','performance','effort','frustration')]
+    all_keys += ['nasa_mean','ues_presentation_order']
+    all_keys += [f'ues_{i}' for i in ['FA1','FA2','FA3','PU1','PU2','PU3','AE1','AE2','AE3','RW1','RW2','RW3']]
+    all_keys += ['ues_FA_mean','ues_PU_mean','ues_AE_mean','ues_RW_mean','ues_total_mean']
+    all_keys += [f'q_{q}' for q in ('q1','q2','q3','q4','q5','q6','q7','q8','q9','q10')]
+    # Add any extra keys not already covered (e.g. trust questionnaire)
+    extra = [k for row in rows for k in row if k not in all_keys]
+    all_keys += list(dict.fromkeys(extra))
 
     os.makedirs(args.out, exist_ok=True)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
