@@ -257,18 +257,17 @@ def make_card(p, aruco_id, set_label, set_color):
     aruco_img = make_aruco(aruco_id, marker_px)
     bordered  = Image.new("RGB", (total_m, total_m), WHITE)
     bordered.paste(aruco_img, (border_px, border_px))
-
-    # Rounded white box behind aruco
     ax = (W - total_m) // 2
+    # Rounded white box behind aruco
     rr(draw, [ax - int(4*MM), y - int(3*MM),
               ax + total_m + int(4*MM), y + total_m + int(3*MM)],
        int(4*MM), fill=WHITE, outline=tuple(BORDER_COL), lw=2)
     card.paste(bordered, (ax, y))
-    y += total_m + int(4 * MM)
-    
     # Label to the right of the aruco
     draw.text((ax + total_m + int(4*MM), y + total_m // 2),
               f"ArUco {aruco_id}", font=f_smbold, fill=tuple(NAVY), anchor="lm")
+    y += total_m + int(4 * MM)
+
     # ── Destination ArUco placeholder (same size) ─────────────────────────────
     dest_label = "Destination"
     draw.text(((W - text_w(draw, dest_label, f_smbold)) // 2, y),

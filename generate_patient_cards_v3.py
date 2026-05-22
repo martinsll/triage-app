@@ -143,19 +143,22 @@ def make_card(p, aruco_id, set_label, set_color):
     rr(draw, [MAR, y, W-MAR, y+header_h], int(4*MM),
        fill=tuple(NAVY), outline=tuple(BORDER_COL), lw=2)
 
-    # Condition badge (top-left) — white pill on navy
-    cond_text = p['condition']
-    cw = text_w(draw, cond_text, f_xs) + int(5*MM)
-    ch = int(5 * MM)
-    rr(draw, [MAR+pad, y+pad, MAR+pad+cw, y+pad+ch], int(2*MM),
-       fill=(255,255,255,60), outline=(255,255,255), lw=1)
-    draw.text((MAR+pad + int(2.5*MM), y+pad + int(0.5*MM)),
-              cond_text, font=f_xs, fill=WHITE)
-
     # Patient name + ID — white on navy header
     name_text = f"{p['pid']}  {p['name']}"
     draw.text((MAR + pad, y + int(9*MM)),
               name_text, font=f_big, fill=WHITE)
+    name_w = text_w(draw, name_text, f_big)
+
+    # Condition badge — to the right of the name
+    cond_text = p['condition']
+    cw = text_w(draw, cond_text, f_xs) + int(5*MM)
+    ch = int(6 * MM)
+    cx = MAR + pad + name_w + int(4*MM)
+    cy = y + int(9*MM)
+    rr(draw, [cx, cy, cx+cw, cy+ch], int(2*MM),
+       fill=tuple(cond_tx), outline=None, lw=1)
+    draw.text((cx + int(2.5*MM), cy + int(1*MM)),
+              cond_text, font=f_xs, fill=WHITE)
 
     # Set badge top-right
     set_text = set_label
@@ -180,11 +183,11 @@ def make_card(p, aruco_id, set_label, set_color):
     cell_w   = (W - 2*MAR - cell_gap) // n_cols
 
     vitals = [
-        ('hr',   'HR',   p['hr'],   'bpm'),
-        ('bp',   'BP',   p['bp'],   'mmHg'),
-        ('spo2', 'SpO2', p['spo2'], '%'),
-        ('rr',   'RR',   p['rr'],   '/min'),
-        ('temp', 'Temp', p['temp'], '°C'),
+        ('hr',   'HR / FC',   p['hr'],   'bpm'),
+        ('bp',   'BP / TA',   p['bp'],   'mmHg'),
+        ('spo2', 'SpO2',      p['spo2'], '%'),
+        ('rr',   'RR / FR',   p['rr'],   '/min'),
+        ('temp', 'Temp',      p['temp'], '°C'),
     ]
 
     for vi, (key, label, val, unit) in enumerate(vitals):
@@ -201,22 +204,30 @@ def make_card(p, aruco_id, set_label, set_color):
         rr(draw, [x0, y0, x1, y1], int(3*MM),
            fill=tuple(bg), outline=tuple(BORDER_COL), lw=1)
 
-        # Label (small, grey)
-        draw.text((x0 + pad, y0 + int(2*MM)),
-                  label, font=f_label, fill=tuple(LABEL_COL))
-        # Value (larger, coloured)
+        # Label and value on same line, vertically centred in cell
         val_str = f"{val}{unit}"
-        draw.text((x0 + pad, y0 + int(6*MM)),
-                  val_str, font=f_med, fill=tuple(tx))
+        label_x = x0 + pad
+        val_x   = x0 + pad + text_w(draw, label + "  ", f_med)
+        text_y  = y0 + (cell_h - text_h(draw, val_str, f_med)) // 2
+        draw.text((label_x, text_y), label, font=f_med, fill=tuple(LABEL_COL))
+        draw.text((val_x,   text_y), val_str, font=f_med, fill=tuple(tx))
 
     y += 3 * (cell_h + cell_gap) + gap
 
     # ── Categorical variables (3 rows) ───────────────────────────────────────
     cat_h = int(9 * MM)
+    TRANS = {
+        'Sudden':'Sudden / Súbito', 'Progressive':'Progressive / Progresivo',
+        'Recurring':'Recurring / Recurrente',
+        'Oriented':'Oriented / Orientado', 'Confused':'Confused / Confuso',
+        'Lethargic':'Lethargic / Letárgico',
+        'Ambulatory':'Ambulatory / Ambulatorio',
+        'Non-Ambulatory':'Non-Ambulatory / No Ambulatorio',
+    }
     cats  = [
-        ('Onset',     p['onset']),
-        ('Alertness', p['alertness']),
-        ('Mobility',  p['mobility']),
+        ('Onset / Inicio',         TRANS.get(p['onset'],     p['onset'])),
+        ('Alertness / Conciencia', TRANS.get(p['alertness'], p['alertness'])),
+        ('Mobility / Movilidad',   TRANS.get(p['mobility'],  p['mobility'])),
     ]
     for label, val in cats:
         # Colour alertness cell by level
@@ -257,20 +268,19 @@ def make_card(p, aruco_id, set_label, set_color):
     aruco_img = make_aruco(aruco_id, marker_px)
     bordered  = Image.new("RGB", (total_m, total_m), WHITE)
     bordered.paste(aruco_img, (border_px, border_px))
-
-    # Rounded white box behind aruco
     ax = (W - total_m) // 2
+    # Rounded white box behind aruco
     rr(draw, [ax - int(4*MM), y - int(3*MM),
               ax + total_m + int(4*MM), y + total_m + int(3*MM)],
        int(4*MM), fill=WHITE, outline=tuple(BORDER_COL), lw=2)
     card.paste(bordered, (ax, y))
-    y += total_m + int(4 * MM)
-    
     # Label to the right of the aruco
     draw.text((ax + total_m + int(4*MM), y + total_m // 2),
-              f"ArUco {aruco_id}", font=f_smbold, fill=tuple(NAVY), anchor="lm")
+              f"Patient ID / ID Paciente  ArUco {aruco_id}", font=f_smbold, fill=tuple(NAVY), anchor="lm")
+    y += total_m + int(4 * MM)
+
     # ── Destination ArUco placeholder (same size) ─────────────────────────────
-    dest_label = "Destination"
+    dest_label = "Destination / Destino"
     draw.text(((W - text_w(draw, dest_label, f_smbold)) // 2, y),
               dest_label, font=f_smbold, fill=tuple(LABEL_COL))
     y += int(3 * MM)
@@ -290,7 +300,7 @@ def make_card(p, aruco_id, set_label, set_color):
        int(3*MM), fill=None, outline=(210,205,200), lw=1)
 
     # Placeholder text
-    ph = "Place destination card here"
+    ph = "Place destination card / Coloca tarjeta destino"
     draw.text(((W - text_w(draw, ph, f_label)) // 2,
                y + dest_box_h // 2 - int(2*MM)),
               ph, font=f_label, fill=tuple(LABEL_COL))

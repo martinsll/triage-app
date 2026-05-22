@@ -42,7 +42,7 @@ def duration_sec(t1, t2):
 
 
 def flatten_phase(row, prefix, it, phase):
-    """Flatten one phase (selection/processes/destinations) into row."""
+    '''Flatten one phase (selection/processes/destinations) into row.'''
     ph  = it.get(phase, {})
     att = ph.get('attempts', [])
     if not att:
@@ -51,7 +51,7 @@ def flatten_phase(row, prefix, it, phase):
     sc = safe_int(a.get('score', 0)) or 0
     rc = a.get('rule_metrics', {}) or {}
 
-    row[f'{prefix}_{phase}_score']        = sc
+    row[f'{prefix}_{phase}_score']=sc
     row[f'{prefix}_{phase}_time_sec']     = a.get('phase_time_sec')
     row[f'{prefix}_{phase}_rule_consult'] = rc.get('total_consultations', 0) if isinstance(rc, dict) else 0
     row[f'{prefix}_{phase}_rule_time_sec']= round(rc.get('total_time_ms', 0) / 1000, 1) if isinstance(rc, dict) else 0
@@ -60,6 +60,8 @@ def flatten_phase(row, prefix, it, phase):
     corr = a.get('correction', {}) or {}
     row[f'{prefix}_{phase}_correction_time_sec']      = corr.get('time_sec')
     row[f'{prefix}_{phase}_correction_rule_time_sec'] = round(corr.get('rule_time_ms', 0) / 1000, 1) if corr else 0
+
+
 
     if phase == 'selection':
         row[f'{prefix}_kendall_tau']           = a.get('kendall_tau')
