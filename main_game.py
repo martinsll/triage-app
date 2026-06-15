@@ -303,14 +303,16 @@ def parse_scene(markers, board_corners):
             elif aruco_id in DEST_IDS:
                 slot_to_dest[slot_idx] = aruco_id
 
-        '''slot_idx = find_slot_majority(corners, slots)
-        if slot_idx is None:
-            continue
-        if aruco_id in PATIENT_IDS:
-            _, pid = PATIENT_DB[aruco_id]
-            slot_to_patient[slot_idx] = pid
-        elif aruco_id in DEST_IDS:
-            slot_to_dest[slot_idx] = aruco_id'''
+        '''
+        for aruco_id, corners in markers.items():
+            slot_idx = find_slot_majority(corners, slots)
+            if slot_idx is None:
+                continue
+            if aruco_id in PATIENT_IDS:
+                _, pid = PATIENT_DB[aruco_id]
+                slot_to_patient[slot_idx] = pid
+            elif aruco_id in DEST_IDS:
+                slot_to_dest[slot_idx] = aruco_id'''
 
     board_state = {idx+1: pid for idx, pid in slot_to_patient.items()}
     dest_state  = {}

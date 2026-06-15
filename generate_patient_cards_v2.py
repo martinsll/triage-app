@@ -180,11 +180,11 @@ def make_card(p, aruco_id, set_label, set_color):
     cell_w   = (W - 2*MAR - cell_gap) // n_cols
 
     vitals = [
-        ('hr',   'HR',   p['hr'],   'bpm'),
-        ('bp',   'BP',   p['bp'],   'mmHg'),
-        ('spo2', 'SpO2', p['spo2'], '%'),
-        ('rr',   'RR',   p['rr'],   '/min'),
-        ('temp', 'Temp', p['temp'], '°C'),
+        ('hr',   'HR / FC',   p['hr'],   'bpm'),
+        ('bp',   'BP / TA',   p['bp'],   'mmHg'),
+        ('spo2', 'SpO2',      p['spo2'], '%'),
+        ('rr',   'RR / FR',   p['rr'],   '/min'),
+        ('temp', 'Temp',      p['temp'], '°C'),
     ]
 
     for vi, (key, label, val, unit) in enumerate(vitals):

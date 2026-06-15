@@ -630,13 +630,13 @@ def api_submit_trust():
     sid  = session.get("session_id")
     sess = load_session(sid)
     if not sess:
-        next_url = '/robot_questionnaire' if sess.get('condition') == 'robot' else '/questionnaire'
         return jsonify({"ok": True, "next": next_url})
     sess["trust_questionnaire"] = {
         "answers":      data.get("answers", {}),
         "submitted_at": datetime.now(timezone.utc).isoformat(),
     }
     save_session(sess)
+    next_url = '/robot_questionnaire' if sess.get('condition') == 'robot' else '/questionnaire'
     return jsonify({"ok": True})
 
 @app.route("/robot_questionnaire")
